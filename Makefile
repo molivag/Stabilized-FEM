@@ -25,7 +25,7 @@ SRCS = mod_parameters mod_isoparam mod_library main_Stokes
 OBJS = $(SRCS:=.o)
 
 #	executable 
-MAIN = Stokes.exe
+MAIN = main_Stokes.x
 #========== Fin variables ===========
 
 #	compile project

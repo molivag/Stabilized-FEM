@@ -2,5 +2,5 @@ Figures/
 *.dat
 *.o
 *.mod
-*.exe
+*.x
 
