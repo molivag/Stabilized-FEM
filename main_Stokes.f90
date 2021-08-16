@@ -17,7 +17,7 @@ program Stokes
   character(len = 1)                   :: S_trans
   ! - - - - - - - - - - - - - - - * * * Fin * * * * * * * - - - - - - - - - - - - - - - - 
   
-    
+  call GeneralInfo( )
   call ReadIntegerFile(20,"elements.dat", Nelem, nUne + 1, elements)  
   call ReadRealFile(10,"nodes.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option para 
   call ReadReal(30,"materials.dat", materials)    !Para dreducir el numero de subrutinas, usar la sentencia option para      
@@ -69,10 +69,11 @@ program Stokes
   DEALLOCATE( Sv )
   DEALLOCATE( Fbcsvp)
   
+  print*,' '
   print*,'!==================== S O L V E R (L A P A C K) ====================!'
   S_m   = size(A_K,1)
   S_n   = size(A_K,2)
-  S_lda = max(1,size(A_K,1))
+  S_lda = max(1,size(A_K,1)) ! lda ≥ max(1, n).
   allocate( S_ipiv(max(1,min(S_m, S_n)) ) )
   S_trans = 'N'
   S_nrhs  = 1
@@ -104,7 +105,11 @@ program Stokes
   print*,'!========== SOLVING SYSTEM OF EQUATIONS '
   ! call sleep(2)
   call dgetrs( S_trans, S_n, S_nrhs, A_K, S_lda, S_ipiv, Solution, S_ldb, S_infoSOL )
+  
+  ! call dgesv( n, nrhs, a, lda, ipiv, b, ldb, info ) !other option from page 765 lapack manual
+  
   DEALLOCATE( S_ipiv)
+
   if ( S_infoSOL .eq. 0 ) then
     print*,'!=== SYSTEM SOLVED WITH STATUS', S_infoSOL, ', THE EXECUTION IS SUCCESSFUL.'
   elseif(S_infoSOL .lt. 0 )then
