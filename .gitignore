@@ -1,6 +1,9 @@
 Figures/
 *.dat
+*.txt
 *.o
 *.mod
 *.x
-
+meshes/
+.ipynb_checkpoints/
+*.ipynb
