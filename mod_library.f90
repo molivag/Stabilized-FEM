@@ -7,23 +7,23 @@ module library
 
     subroutine GeneralInfo( ) 
     
-    print*, ' '
-    print*, '- - - - 2D Cavity Driven Flow Simulation - - - - '
-    print*, ' '
-    print*,'!==================== G E N E R A L   I N F O ====================!'
-    ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='
-    write(*,*)'1.- Dimension of the problem:    ', DimPr, ' |'
-    write(*,*)'2.- Type of element:             ','        ',ElemType,'|'
-    write(*,*)'3.- Total number of elements:    ', Nelem,' |'
-    write(*,*)'4.- Total velocity nodes:        ', n_nodes, ' |'
-    write(*,*)'5.- Total preasure nodes:        ', n_pnodes, ' |'
-    write(*,*)'6.- DoF per element:             ', Dof, ' |'
-    write(*,*)'7.- Velocity nodes per element:  ', nUne, ' |'
-    write(*,*)'8.- Preasure nodes per element:  ', nPne, ' |'
-    write(*,*)'9.- Total of Gauss points:       ', totGp,' |'
-    ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='    
-    write(*,*)' '
-    print*,'!============== F I L E   R E A D I N G   S T A T U S ============!'
+      print*, ' '
+      print*, '- - - - 2D Cavity Driven Flow Simulation - - - - '
+      print*, ' '
+      print*,'!==================== GENERAL INFO ===============!'
+      ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='
+      write(*,*)'1.- Dimension of the problem:    ', DimPr, ' |'
+      write(*,*)'2.- Type of element:             ','        ',ElemType,'|'
+      write(*,*)'3.- Total number of elements:    ', Nelem,' |'
+      write(*,*)'4.- Total velocity nodes:        ', n_nodes, ' |'
+      write(*,*)'5.- Total preasure nodes:        ', n_pnodes, ' |'
+      write(*,*)'6.- DoF per element:             ', Dof, ' |'
+      write(*,*)'7.- Velocity nodes per element:  ', nUne, ' |'
+      write(*,*)'8.- Preasure nodes per element:  ', nPne, ' |'
+      write(*,*)'9.- Total of Gauss points:       ', totGp,' |'
+      ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='    
+      write(*,*)' '
+      print*,'!============== FILE READING STATUS ============!'
 
     endsubroutine GeneralInfo
 
@@ -388,7 +388,7 @@ module library
       integer, dimension(nUne,1)    :: node_id_map
       integer, dimension(nPne,1)    :: pnode_id_map
       integer                       :: gp, ngp, e, i,j, row_node, row 
-      integer                       :: col_node, pnode_id, col!, mrow, ncol
+      integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
       
 
       ngp = size(gauss_points,1) !TMB PODRIA SER VARIABLE PERMANENTE CON SAVE
@@ -429,7 +429,8 @@ module library
       allocate (K12(n_nodes*2,n_pnodes),K12_T(n_pnodes,n_nodes*2))
       K12 = 0
       
-      call Quad4Nodes(gauss_points, Np)
+      call ShapeFunctions(gauss_points, nPne, Np)
+      ! call Quad4Nodes(gauss_points, Np)
 
       do e = 1, Nelem
         kep = 0.0
@@ -503,16 +504,19 @@ module library
 
       !========== Filling the symetric (upper and lower) part of K ==========
       !========== Upper
+      dimAK = size(A_K,1)
+      symmetric = dimAK - n_pnodes
+      
       do i = 1, 2*n_nodes
         do j = 2*n_nodes+1, (2*n_nodes+n_pnodes)
-          A_K(i, j) = -K12(i,j-682)
+          A_K(i, j) = -K12(i,j-symmetric)
         end do
       end do
       !========== Lower
       K12_T = transpose(-K12)
       do i = 2*n_nodes+1, (2*n_nodes+n_pnodes)
         do j = 1, 2*n_nodes 
-          A_K(i, j) = K12_T(i-682,j)
+          A_K(i, j) = K12_T(i-symmetric,j)
         end do
       end do
 
@@ -532,7 +536,10 @@ module library
         !   write(2, '(1000F14.7)')( A_K(i,j) ,j=1,ncol)
         ! end do
       ! close(2)
-      
+      ! desalojar memoria para K12 y para Np
+      DEALLOCATE(K12)
+      DEALLOCATE(K12_T)
+      DEALLOCATE(Np)
     end subroutine GlobalK
 
     subroutine SetBounCond( NoBV, NoBVcol )
@@ -614,6 +621,9 @@ module library
       !la primera fila de la matriz global K (A_K). No le veo el caso pero lo dejamos asi.
       param = maxval(A_K(int(Fbcsvp(1,1))*2-1,:))
       coeff = abs(param) * 1.0E7
+
+      print*, 'param', param
+      print*, 'coeff', coeff
       
       preasure_row = 2*n_nodes
 
@@ -632,21 +642,21 @@ module library
 
     end subroutine ApplyBoundCond
   
-    subroutine MKLfactoResult( S_infoLU )
+    subroutine MKLfactoResult( value )
       implicit none
 
-      integer :: S_infoLU
+      integer :: value
       character(len=32) :: text
       character(len=46) :: text2
 
-      text  = '**FACTORIZATION DONE WITH STATUS'
-      text2 = '**THE FACTORIZATION HAS BEEN COMPLETED, BUT U_'
-      if ( S_infoLU .eq. 0 ) then
-        write(*, 101) text, S_infoLU, ', THE EXECUTION IS SUCCESSFUL.'
-      elseif(S_infoLU .lt. 0 )then
-        write(*, 102) text, S_infoLU, 'THE',S_infoLU,'-TH PARAMETER HAD AN ILLEGAL VALUE.'
-      elseif(S_infoLU .gt. 0 )then
-        write(*, 103) text2, S_infoLU,'IS EXACTLY SINGULAR.'
+      text  = '   **FACTORIZATION DONE WITH STATUS'
+      text2 = '   **THE FACTORIZATION HAS BEEN COMPLETED, BUT U_'
+      if ( value .eq. 0 ) then
+        write(*, 101) text, value, ', THE EXECUTION IS SUCCESSFUL.'
+      elseif(value .lt. 0 )then
+        write(*, 102) text, value, 'THE',value,'-TH PARAMETER HAD AN ILLEGAL VALUE.'
+      elseif(value .gt. 0 )then
+        write(*, 103) text2, value,'IS EXACTLY SINGULAR.'
         print*,'DIVISION BY 0 WILL OCCUR IF YOU USE THE FACTOR U FOR SOLVING A SYSTEM OF LINEAR EQUATIONS.'
       endif
       print*, ' '
@@ -657,19 +667,19 @@ module library
     
     end subroutine MKLfactoResult
 
-    subroutine MKLsolverResult( S_infoSOL )
+    subroutine MKLsolverResult( value )
       implicit none
 
-      integer :: S_infoSOL
+      integer :: value
       character(len=27) :: text
       character(len=36) :: text2
-      text =  '**SYSTEM SOLVED WITH STATUS'
+      text =  '   **SYSTEM SOLVED WITH STATUS'
       text2 = '-TH PARAMETER HAD AN ILLEGAL VALUE.'
 
-      if ( S_infoSOL .eq. 0 ) then
-        write(*,101) text, S_infoSOL, ', THE EXECUTION IS SUCCESSFUL.'
-      elseif(S_infoSOL .lt. 0 )then
-        write(*,102) text, S_infoSOL, 'THE',S_infoSOL, text2
+      if ( value .eq. 0 ) then
+        write(*,101) text, value, ', THE EXECUTION IS SUCCESSFUL.'
+      elseif(value .lt. 0 )then
+        write(*,102) text, value, 'THE',value, text2
       endif
       ! call sleep(1)
       print*,' '
@@ -679,25 +689,27 @@ module library
 
     end subroutine MKLsolverResult
 
-    subroutine writeMatrix(A_K, unit, name1, Sv, unit2, name2)
+    subroutine writeMatrix(Matrix, unit, name1, Vector, unit2, name2)
       implicit none
       character(*) :: name1, name2
       integer :: i, j, mrow, ncol, unit, unit2
-      double precision, dimension(2*n_nodes+n_pnodes ,2*n_nodes+n_pnodes ), intent(in) :: A_K
-      double precision, dimension(2*n_nodes+n_pnodes ,1), intent(in) :: Sv
+      double precision, dimension(2*n_nodes+n_pnodes ,2*n_nodes+n_pnodes ), intent(in) :: Matrix
+      double precision, dimension(2*n_nodes+n_pnodes ,1), intent(in) :: Vector
+
+      100 format (900E20.12)
 
       mrow = 2*n_nodes+n_pnodes 
       ncol = 2*n_nodes+n_pnodes
       open(unit=unit, file= name1, ACTION="write", STATUS="replace")
 
       do i=1,2*n_nodes+n_pnodes 
-        write(unit, '(1000F20.7)')( A_K(i,j) ,j=1,2*n_nodes+n_pnodes)
+        write(unit, 100)( Matrix(i,j) ,j=1,2*n_nodes+n_pnodes)
       end do
       close(unit)
     
       open(unit=unit2, file= name2, ACTION="write", STATUS="replace ")
       do i=1,2*n_nodes+n_pnodes 
-        write(unit2, '(1000F20.7)') Sv(i,1)
+        write(unit2, 100) Vector(i,1)
       end do
       close(unit2)
 
