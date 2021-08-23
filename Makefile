@@ -40,6 +40,8 @@ all : $(MAIN)
 
 $(MAIN) : $(OBJS)
 	@$(FC) $(CFLAGS) -g -mkl -O0 $(OBJS) -o $(MAIN) 
+#next line is for debugging (GDB does not work if the executable was compiled with the -mkl flag)
+#@$(FC) $(CFLAGS) -g $(OBJS) -o $(MAIN) 
 # @$(FC) $(CFLAGS) $(OBJS) -o $(MAIN)
 #These three flags are needed to correct execution of the LAPACK library
 #If the libray is comented (not used) in the code, must them desactivated the flegs
