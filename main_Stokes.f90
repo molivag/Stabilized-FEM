@@ -6,9 +6,8 @@ program main_Stokes
   implicit none
   ! - - - - - - - - - - * * * Variables que se usan aqui en main * * * * * * * - - - - - - - - - -
   real(8), allocatable, dimension(:,:) :: A_K, Sv, Solution, N, dN_dxi, dN_deta
-  real, allocatable, dimension(:,:)    :: Fbcsvp
+  real(4), allocatable, dimension(:,:) :: Fbcsvp
   integer                              :: NoBV, NoBVcol
-  external                             :: SLEEP
   !=============== S O L V E R ===============              
   external                             :: mkl_dgetrfnp, dgetrf, dgetrs
   integer                              :: S_m, S_n, S_lda, S_ldb, S_infoLU, S_nrhs , S_infoSOL
@@ -17,11 +16,11 @@ program main_Stokes
   ! - - - - - - - - - - - - - - - * * * Fin * * * * * * * - - - - - - - - - - - - - - - - 
   
   call GeneralInfo( )
-  call ReadIntegerFile(10,"elements.dat", Nelem, nUne + 1, elements)  
-  call ReadRealFile(20,"nodes.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option para 
+  call ReadIntegerFile(10,"elements_linear.dat", Nelem, nUne + 1, elements)  
+  call ReadRealFile(20,"nodes_linear.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option para 
   call ReadReal(30,"materials.dat", materials)    !Para dreducir el numero de subrutinas, usar la sentencia option para      
-  call ReadIntegerFile(40,"pnodes.dat", n_nodes,2, pnodes)
-  call ReadIntegerFile(50,"pelements.dat", Nelem,nPne + 1, pelements)
+  call ReadIntegerFile(40,"pnodes_linear.dat", n_nodes,2, pnodes)
+  call ReadIntegerFile(50,"elements_linear.dat", Nelem,nPne + 1, pelements)
   print*, ' '
   print*, '!=============== INFO DURING EXECUTION ===============!'
   
@@ -47,7 +46,7 @@ program main_Stokes
   DEALLOCATE( dN_dxi)
   DEALLOCATE( dN_deta)
   DEALLOCATE( Fbcsvp)
-  call writeMatrix(A_K, 111, 'Global_K.dat', Sv, 222, 'Global_Sv.dat') !write global matrix and vector
+  call writeMatrix(A_K, 111, 'bilinear_Global_K.dat', Sv, 222, 'bilinear_Global_Sv.dat') !write global matrix and vector
   DEALLOCATE( Sv )
   
   print*,' '
@@ -72,7 +71,7 @@ program main_Stokes
   call MKLsolverResult( S_infoSOL )
   
   DEALLOCATE( S_ipiv)
-  call writeMatrix(A_K, 333, 'AK_LU.dat', Solution, 444, 'Solution.dat')
+  call writeMatrix(A_K, 333, 'A_bilinear_K_LU.dat', Solution, 444, 'bilinear_Solution.dat')
   DEALLOCATE( A_K)
   DEALLOCATE( Solution)
   print*,' '  
