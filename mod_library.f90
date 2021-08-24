@@ -645,47 +645,49 @@ module library
     subroutine MKLfactoResult( value )
       implicit none
 
-      integer :: value
+      integer :: value, val
       character(len=32) :: text
-      character(len=46) :: text2
+      character(len=48) :: text2
 
-      text  = '   **FACTORIZATION DONE WITH STATUS'
-      text2 = '   **THE FACTORIZATION HAS BEEN COMPLETED, BUT U_'
+      text  = '   *FACTORIZATION DONE WITH STATUS'
+      text2 = '   *THE FACTORIZATION HAS BEEN COMPLETED, BUT U('
       if ( value .eq. 0 ) then
         write(*, 101) text, value, ', THE EXECUTION IS SUCCESSFUL.'
       elseif(value .lt. 0 )then
-        write(*, 102) text, value, 'THE',value,'-TH PARAMETER HAD AN ILLEGAL VALUE.'
+        val = abs(value)
+        write(*, 102) '    THE',val,'-TH PARAMETER HAD AN ILLEGAL VALUE.'
       elseif(value .gt. 0 )then
-        write(*, 103) text2, value,'IS EXACTLY SINGULAR.'
-        print*,'DIVISION BY 0 WILL OCCUR IF YOU USE THE FACTOR U FOR SOLVING A SYSTEM OF LINEAR EQUATIONS.'
+        write(*, 103) text2, value,',',value,') IS EXACTLY SINGULAR.'
+        print*,'   DIVISION BY 0 WILL OCCUR IF YOU USE THE FACTOR U FOR SOLVING A SYSTEM'
+        print*,'   OF LINEAR EQUATIONS.'
       endif
       print*, ' '
 
-      101 format (A, 2x, I1, A)
-      102 format (A, 2x, I1, A, 2x, I1, A)
-      103 format (A, 2x, I1, A)
+      101 format (A, 2x, I4, A)
+      102 format (A, I4, A)
+      103 format (A, I3, A, I3, A)
     
     end subroutine MKLfactoResult
 
     subroutine MKLsolverResult( value )
       implicit none
 
-      integer :: value
-      character(len=27) :: text
-      character(len=36) :: text2
-      text =  '   **SYSTEM SOLVED WITH STATUS'
+      integer :: value, val
+      character(len=30) :: text
+      character(len=35) :: text2
+      text =  '    *SYSTEM SOLVED WITH STATUS'
       text2 = '-TH PARAMETER HAD AN ILLEGAL VALUE.'
 
       if ( value .eq. 0 ) then
         write(*,101) text, value, ', THE EXECUTION IS SUCCESSFUL.'
       elseif(value .lt. 0 )then
-        write(*,102) text, value, 'THE',value, text2
+        val = abs(value)
+        write(*,102) '    THE',val, text2
       endif
-      ! call sleep(1)
       print*,' '
 
       101 format (A, 2x, I1, A)
-      102 format (A, 2x, I1, A, 2x, I1, A)
+      102 format (A, I3, A)
 
     end subroutine MKLsolverResult
 
