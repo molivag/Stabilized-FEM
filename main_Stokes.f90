@@ -25,6 +25,7 @@ program main_Stokes
   print*, '!=============== INFO DURING EXECUTION ===============!'
   
   call GetQuadGauss(ngp,ngp,gauss_points, gauss_weights)
+  ! call GetTriGauss(gauss_points, gauss_weights)
   call ShapeFunctions(gauss_points, nUne, N, dN_dxi, dN_deta)  
   
   allocate(A_K(2*n_nodes+n_pnodes, 2*n_nodes+n_pnodes))
@@ -46,7 +47,7 @@ program main_Stokes
   DEALLOCATE( dN_dxi)
   DEALLOCATE( dN_deta)
   DEALLOCATE( Fbcsvp)
-  call writeMatrix(A_K, 111, 'bilinear_Global_K.dat', Sv, 222, 'bilinear_Global_Sv.dat') !write global matrix and vector
+  call writeMatrix(A_K, 111, 'Global_K_4quad.dat', Sv, 222, 'Global_Sv_4quad.dat') !write global matrix and vector
   DEALLOCATE( Sv )
   
   print*,' '
@@ -71,12 +72,11 @@ program main_Stokes
   call MKLsolverResult( S_infoSOL )
   
   DEALLOCATE( S_ipiv)
-  call writeMatrix(A_K, 333, 'A_bilinear_K_LU.dat', Solution, 444, 'bilinear_Solution.dat')
+  call writeMatrix(A_K, 333, 'A_4K_LU.dat', Solution, 444, 'Solution4.dat')
   DEALLOCATE( A_K)
   DEALLOCATE( Solution)
   print*,' '  
   print*, 'Files written succesfully. . . . .'
   print*, ' ' 
-   
 
 end program main_Stokes
