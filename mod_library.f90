@@ -646,7 +646,7 @@ module library
       implicit none
 
       integer :: value, val
-      character(len=32) :: text
+      character(len=34) :: text
       character(len=48) :: text2
 
       text  = '   *FACTORIZATION DONE WITH STATUS'
@@ -663,7 +663,7 @@ module library
       endif
       print*, ' '
 
-      101 format (A, 2x, I4, A)
+      101 format (A, 1x, I1, A)
       102 format (A, I4, A)
       103 format (A, I3, A, I3, A)
     
@@ -686,7 +686,7 @@ module library
       endif
       print*,' '
 
-      101 format (A, 2x, I1, A)
+      101 format (A, 1x, I1, A)
       102 format (A, I3, A)
 
     end subroutine MKLsolverResult
