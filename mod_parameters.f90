@@ -22,6 +22,74 @@ module Parameters
 
   != = = = = =  About Isoparametric Mapping  = = = = =  
 
+!  call ReadIntegerFile(10,"elements_linear.dat", Nelem, nUne + 1, elements)  
+!  call ReadRealFile(20,"nodes_linear.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option para 
+!  call ReadReal(30,"materials.dat", materials)    !Para dreducir el numero de subrutinas, usar la sentencia option para      
+!  call ReadIntegerFile(40,"pnodes_linear.dat", n_nodes,2, pnodes)
+!  call ReadIntegerFile(50,"elements_linear.dat", Nelem,nPne + 1, pelements)
+   
+!  subroutine ReadRealFile(UnitNum, FileName, NumRows, NumCols, Real_Array)
+!      implicit none
+!
+!      integer :: i, j, status, UnitNum, NumRows, NumCols
+!      character (len=*), intent (in) :: FileName
+!      real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
+!
+!      open (unit = UnitNum, file =FileName, status='old', action='read' , iostat = status)
+!      
+!      if(nUne .eq. 8)then
+!        goto 5001
+!      elseif(nUne .eq. 4)then
+!        goto 5002
+!      end if
+!
+      ! read in values
+!      5001 read(UnitNum,*) ((Real_Array(i,j), j=1,NumCols), i=1,NumRows)
+!      goto 5003
+!      5002 read(UnitNum,*) ((Real_Array(i,j), j=1,NumCols), i=2-1,NumRows-1,2)
+!      
+!      5003 continue
+!      
+!      print *, "Status_Real_File ", status
+!
+!      close (UnitNum)
+!
+!    end subroutine
+!
+!    subroutine ReadIntegerFile(UnitNum, FileName, NumRows, NumCols, IntegerArray)
+!
+!      integer :: i, j, status
+!      integer, intent(in)            :: UnitNum, NumRows, NumCols
+!      character (len=*), intent (in) :: FileName
+!      integer, dimension (1:NumRows, 1:NumCols), intent (out) :: IntegerArray
+!
+!
+!      open (unit = UnitNum, file =FileName, status='old', action='read' , iostat = status)
+!
+!      ! read in values
+!      read(UnitNum,*) ((IntegerArray(i,j), j=1,NumCols), i=1,NumRows)
+!      print *, "Status_Int_File  ", status
+!      print*, "Shape of ",FileName," is ", shape(IntegerArray)
+!      close (UnitNum)
+!
+!    end subroutine ReadIntegerFile
+!
+!    subroutine ReadReal(UnitNum, FileName, value)
+!
+!      integer :: status, UnitNum
+!      character (len=*), intent (in) :: FileName
+!      real :: value
+!
+!
+!      open (unit = UnitNum, file =FileName, status='old', action='read' , iostat = status)
+!
+!      ! read in values
+!      read(UnitNum,*) value
+!      print *, "Status_Single_Val", status
+!
+!      close (UnitNum)
+
+!    end subroutine
 
   
   
