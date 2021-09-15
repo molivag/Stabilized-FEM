@@ -68,7 +68,7 @@ module library
       ! read in values
       read(UnitNum,*) ((IntegerArray(i,j), j=1,NumCols), i=1,NumRows)
       print *, "Status_Int_File  ", status
-      print*, "Shape of ",FileName," is ", shape(IntegerArray)
+      ! print*, "Shape of ",FileName," is ", shape(IntegerArray)
       close (UnitNum)
 
     end subroutine ReadIntegerFile
@@ -321,6 +321,33 @@ module library
 
     end function compBmat
 
+    function Bpmat(dNp_dxi, dNp_deta, Gp)                                               
+      !Computation of the preassure Strain-Displacement Matrix
+    
+      implicit none                                                                                      
+    
+      integer, intent(in) :: Gp                                              
+      double precision, dimension(nPne,size(gauss_points)), intent(in) :: dNp_dxi, dNp_deta
+      double precision, dimension(1*DimPr, 1*nPne) :: Bpmat ! 1 grado de libertad por nodo para los elementos de presion
+      double precision, dimension(1, nPne)         :: Npxi, Npeta
+      integer :: i                                                                                                   
+    
+      ! B = 0                                                                                                                        
+      Npxi  = spread(dNp_dxi(:,Gp),dim = 1, ncopies= 1)        
+      Npeta = spread(dNp_deta(:,Gp),dim = 1, ncopies= 1)     
+    
+      !Npxi  = Nx(:,Gp)                                                                         
+      !Npeta = Ny(:,Gp)                                                              
+    
+      do i=1, nPne                                                                                      
+        Bpmat(1,i) = Npxi(1,i)                                  
+        Bpmat(2,i) = Npeta(1,i)                                 
+      end do                                                    
+    
+      return                                                    
+    
+    end function Bpmat  
+
     subroutine AssembleK(K, ke, node_id_map, ndDOF)
 
       implicit none
@@ -358,29 +385,33 @@ module library
 
       double precision, dimension(2*n_nodes+n_pnodes, 2*n_nodes+n_pnodes), intent(out) :: A_K  !Global Stiffnes matrix
       double precision, dimension(nUne,size(gauss_points,1)), intent(in)               :: dN_dxi, dN_deta
+      double precision, allocatable, dimension(:,:)     :: dNp_dxi, dNp_deta
       double precision, allocatable, dimension(:,:)     :: Np
       double precision, dimension(2*nUne, 2*nUne)       :: ke
+      double precision, dimension(2*nUne,nPne)          :: kep
+      double precision, dimension(nPne, nPne)           :: Stab !Will be assembled into K22 
       double precision, dimension(DimPr, DimPr)         :: Jaco, Jinv
       double precision                                  :: detJ
-      double precision, dimension(2*DimPr, 2*DimPr)     :: Jb
-      double precision, dimension(2*DimPr, DimPr*nUne)  :: B
+      double precision, dimension(2*DimPr, 2*DimPr)     :: Jb ! aqui tmb es Dof no DimPr pero 2 para vel y dos para P
+      double precision, dimension(2*DimPr, DimPr*nUne)  :: B  !no es DimPr es Dof del elemento en cuestion, en este caso deberia ser
+      double precision, dimension(DimPr*1, 1*nPne)      :: Bp !2 para la matriz elemental de velocidad y uno para la matriz elemental
+      double precision, dimension(1*nPne, DimPr*1 )     :: Bp_T
       double precision, dimension(Dof,DimPr*DimPr)      :: HJ
       double precision, dimension(Dof,2*nUne)           :: HJB
-      double precision, dimension(2*nUne,Dof)           :: HJB_T
-      double precision, dimension(2*nUne,Dof)           :: part1
-      double precision, dimension(2*nUne,2*nUne)        :: part2
-      double precision, dimension(2*nUne,2*nUne)        :: part3
+      double precision, dimension(2*nUne,Dof)           :: HJB_T !Todos estos dos, hablan de los DoF de la velocidad 
+      double precision, dimension(2*nUne,Dof)           :: part1 !Todos estos dos, hablan de los DoF de la velocidad
+      double precision, dimension(2*nUne,2*nUne)        :: part2 !Todos estos dos, hablan de los DoF de la velocidad
+      double precision, dimension(2*nUne,2*nUne)        :: part3 !Todos estos dos, hablan de los DoF de la velocidad
       double precision, dimension(nUne,DimPr)           :: part4
       double precision, dimension(DimPr,1)              :: part5
       double precision, dimension(nPne,1)               :: part6
       double precision, dimension(1,nPne)               :: part7
       double precision, dimension(2*nUne,nPne)          :: part8
-      double precision, dimension(2*nUne,nPne)          :: kep
       double precision, dimension(DimPr,1)              :: A
       double precision, dimension(2*nUne,1)             :: dn
       real, dimension(Dof,2*DimPr)                      :: H
       real, dimension(Dof,Dof)                          :: cc, C   !Derived from elasticity formulation as Matertial matrix of Hook's Law
-      real, allocatable, dimension(:,:)                 :: K12, K12_T!Lo puse allocatable por que marca error en la memoria 
+      double precision, allocatable, dimension(:,:)     :: K12, K12_T, K22!Lo puse allocatable por que marca error en la memoria 
       ! Array 'k12' at (1) is larger than limit set by '-fmax-stack-var-size=', moved from stack to static storage. This makes the procedure unsafe when called recursively, 
       !or concurrently from multiple threads. Consider using '-frecursive', or increase the '-fmax-stack-var-size=' limit, or change the code to use an ALLOCATABLE array. [-Wsurprising]
       real, dimension(nUne,DimPr)   :: element_nodes
@@ -389,7 +420,7 @@ module library
       integer, dimension(nPne,1)    :: pnode_id_map
       integer                       :: gp, ngp, e, i,j, row_node, row 
       integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
-      
+      real                          :: tau_stab 
 
       ngp = size(gauss_points,1) !TMB PODRIA SER VARIABLE PERMANENTE CON SAVE
 
@@ -398,12 +429,12 @@ module library
       C  = materials * cc
       H  = CompH()
       
-      !elements loop for K1-1 block Global K
-      do e = 1, Nelem
+      !Setup for K11 block or Kuu
+      do e = 1, Nelem    !elements loop for K11 block Global K
         ke = 0
         Jb = 0
         call SetElementNodes(e, element_nodes, node_id_map)
-        !do-loop: compute element stiffness matrix ke
+        !do-loop: compute element (velocity-velocity) stiffness matrix ke
         do gp  = 1, ngp
           Jaco = J2D(element_nodes, dN_dxi, dN_deta, gp)
           detJ = m22det(Jaco)
@@ -424,40 +455,46 @@ module library
       
       end do
 
-      !Setup for K1-2 block
-      ! nPne is declared at the top as parameter
+      !Setup for K12 block or KuP
       allocate (K12(n_nodes*2,n_pnodes),K12_T(n_pnodes,n_nodes*2))
-      K12 = 0
+      allocate (K22(n_pnodes,n_pnodes))
+      K12  = 0.0
+      K22  = 0.0
       
-      call ShapeFunctions(gauss_points, nPne, Np)
+      call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
+      tau_stab = ( nodes(2,2) - nodes(3,2) ) /materials !tau stabilization
 
+      !for-loop: compute K12 block of K
       do e = 1, Nelem
         kep = 0.0
+        Stab = 0.0
         call SetElementNodes(e, element_nodes,  node_id_map)
         call PreassureElemNods(e, pelement_nodes, pnode_id_map) !--Arreglar esto para que sea con p en todos los arguments
-        ! for-loop: compute element stiffness matrix ke     
+        ! for-loop: compute element stiffness matrix kup_e
         do gp  = 1, ngp
           Jaco = J2D(element_nodes, dN_dxi, dN_deta, gp)
           detJ = m22det(Jaco)
           Jinv = inv2x2(Jaco)
-          dN = 0.0
+          Bp   = Bpmat(dNp_dxi, dNp_deta, gp)
+          Bp_T = transpose(Bp)
+          dn   = 0.0
           do j = 1, nUne
             part4(j,:) = [ dN_dxi(j,gp), dN_deta(j,gp) ]  
             part5 = reshape([part4(j,:)],[2,1])           !--Revisar por que en la linea 514 y 515 si se puede hacer
-            A =  matmul(Jinv,part5)           !Tuve que separar todas las multiplicaciones para que funcione 
-                                              ! pues el resultado de matmul debe guardarse en otra variable, A sino marca error
-            dN(2*j-1:2*j ,1)= A(:,1)          !quiza si necesite dividri la operacion de este matmul
+            A =  matmul(Jinv,part5)           !Separe multiplicaciones para que funcione 
+            dN(2*j-1:2*j ,1)= A(:,1)          !quiza dividri operacion de este matmul
           end do
           part6(:,1) = Np(:,gp)
           part7 = transpose(part6)
           part8 = matmul(dn,part7)
-          kep = kep + part8 * (detJ*gauss_weights(gp,1)) !----> Verificar si hace falta la parte9 separando part8 * detJ
+          kep = kep + part8 * (detJ*gauss_weights(gp,1)) 
+          ! Stab = Stab + tau_stab * (Bp_T * Bp) * detJ * gauss_weights(gp,1)
+          Stab = Stab + tau_stab * detJ * gauss_weights(gp,1)
         end do  
       
-        ! for-loop: assemble ke into global Kp
+        ! for-loop: assemble ke into global KP (it mean K12)
         do i = 1, nUne
-          
           row_node = node_id_map(i,1)
           row = 2*row_node - 1
           do j = 1, nPne
@@ -465,9 +502,12 @@ module library
             pnode_id = pnodes(col_node,2)
             col = pnode_id
             K12(row:row+1, col) = K12(row:row+1, col) + kep(2*i-1:i*2, j)
-          enddo
+          end do
+        end do 
         
-        enddo 
+        ! for-loop: assemble ke into global KP
+        ! Aqui se puede ensablar llamando a la funcion AssembleK
+        call AssembleK(K22, Stab, pnode_id_map, 1) ! assemble global K
 
         !Desde aqui
           ! print*, 'element number', e
