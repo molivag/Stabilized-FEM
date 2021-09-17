@@ -456,6 +456,11 @@ module library
       integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
       real                          :: tau_stab 
 
+      integer :: mrow, ncol, rowstab, colstab, kk,l
+      
+      
+      
+
       ngp = size(gauss_points,1) !TMB PODRIA SER VARIABLE PERMANENTE CON SAVE
 
       A_K  = 0.0
@@ -539,13 +544,12 @@ module library
           end do
         end do 
         
-        ! for-loop: assemble ke into global KP
-        ! Aqui se puede ensablar llamando a la funcion AssembleK
+        ! for-loop: assemble stab into global K22
         call AssemblyStab(Stab, pnode_id_map, 1, K22) ! assemble global K
-
+        
         !Desde aqui
           ! print*, 'element number', e
-
+          
           ! if ( e <= 15 ) then
           !   do i =1,10
           !     print*, K12(i,e)
@@ -576,6 +580,26 @@ module library
         !Y hasta aqui para comprobar la matriz K12
       end do
 
+  !Imprimir aqui matriz K22 global para verificar el ensamblaje
+
+     !100 format (900E20.12)
+
+      !mrow = n_pnodes 
+      !ncol = n_pnodes
+      !open(unit=555, file= "AssembleStab.txt", ACTION="write", STATUS="replace")
+
+      !do i=1,mrow 
+      !  write(555, 100)( K22(i,j) ,j=1,ncol)
+      !end do
+      !close(555)
+
+
+
+
+
+
+
+
       !========== Filling the symetric (upper and lower) part of K ==========
       !========== Upper
       dimAK = size(A_K,1)
@@ -593,29 +617,34 @@ module library
           A_K(i, j) = K12_T(i-symmetric,j)
         end do
       end do
-
-      ! !========== Escribe en archivo la parte simetrica de la matriz global 
-        ! mrow = 2*n_nodes
-        ! ncol = n_pnodes
-        ! open(unit=1, file='K12_T.dat', ACTION="write", STATUS="replace")
-        ! do i=1,ncol
-        !   write(1, '(1000F14.7)')( K12_T(i,j) ,j=1,mrow)
-        ! end do
-        ! close(1)
-        ! !========== Escribir en archivo la matriz global
-        ! mrow = 2*n_nodes+n_pnodes 
-        ! ncol = 2*n_nodes+n_pnodes
-        ! open(unit=2, file='completeA_K.dat', ACTION="write", STATUS="replace")
-        ! do i=1,mrow
-        !   write(2, '(1000F14.7)')( A_K(i,j) ,j=1,ncol)
-        ! end do
-      ! close(2)
-      ! desalojar memoria para K12 y para Np
+      !========== Filling the stabilization global matrix into A_K ==========
+      RowStab = dimAK - n_pnodes 
+      ColStab = dimAK - n_pnodes 
+!      
+      do i = RowStab, 2*n_nodes+n_pnodes -1
+        do j = ColStab, 2*n_nodes+n_pnodes-1
+          A_K(i, j) = K22((i+1)-RowStab,(j+1)-ColStab)
+        end do
+      end do
+      
+      !      do i = RowStab, 2*n_nodes+n_pnodes
+      !        do j = ColStab, 2*n_nodes+n_pnodes
+      !          do kk = 1, n_pnodes
+      !            do l =1, n_pnodes
+      !              !A_K(i, j) = K22((i+1)-RowStab,(j+1)-ColStab)
+      !              A_K(i, j) = K22(kk,l)
+      !            end do
+      !          end do
+      !        end do
+      !      end do
+      
       DEALLOCATE(K12)
       DEALLOCATE(K12_T)
       DEALLOCATE(Np)
     end subroutine GlobalK
-
+    
+    
+    
     subroutine SetBounCond( NoBV, NoBVcol )
       !========================================================================
       !Esta subroutina revisa todos los nodos de la malla y define el tipo de
@@ -628,14 +657,14 @@ module library
       !La tercera columna asigna el valor correspondiente de la condicion de forntera
       !=========================================================================
       implicit none
-
+      
       ! real, dimension(341,3)    :: nodes
       ! integer, parameter        :: n_nodes = size(nodes,1)
       
       integer, intent(out) :: NoBV, NoBVcol
       integer :: ierror, a ,b, c, i
       real    :: x, y
-
+      
       ! call ReadRealFile(10,"nodes.dat", 341,3, nodes)
       ! inicializamos los contadores
       ! Los contadores son para que cada vez
@@ -655,29 +684,29 @@ module library
         x=nodes(i,2)
         y=nodes(i,3)
         if(y.eq.1.0) then
-         write(100,50) real(i), 1.0, 1.0
-         write(100,50) real(i), 2.0, 0.0
-         a=a+2
-         if(x.eq.0.5)then
+          write(100,50) real(i), 1.0, 1.0
+          write(100,50) real(i), 2.0, 0.0
+          a=a+2
+          if(x.eq.0.5)then
             write(100,50) real(i),3.0,0.0
             b=b+1
-         end if
-
+          end if
+          
         else if (x.eq.0.0 .or. y.eq.0.0 .or. x.eq.1.0)then
-         write(100,50) real(i), 1.0, 0.0
-         write(100,50) real(i), 2.0, 0.0
-         c=c+2
-
+          write(100,50) real(i), 1.0, 0.0
+          write(100,50) real(i), 2.0, 0.0
+          c=c+2
         end if
         NoBV = a+b+c
       end do
-    
+      
       close(100)
-    
+      
       50 format(3F15.10)
-
-   
+      
+      
     end subroutine SetBounCond  
+    
 
     subroutine ApplyBoundCond( NoBV, Fbcsvp, A_K, Sv )
       ! - - - - - - - - - - * * * * * * * * * * - - - - - - - 
@@ -742,16 +771,16 @@ module library
       103 format (A, I3, A, I3, A)
     
     end subroutine MKLfactoResult
-
+    
     subroutine MKLsolverResult( value )
       implicit none
-
+      
       integer :: value, val
       character(len=30) :: text
       character(len=35) :: text2
       text =  '    *SYSTEM SOLVED WITH STATUS'
       text2 = '-TH PARAMETER HAD AN ILLEGAL VALUE.'
-
+      
       if ( value .eq. 0 ) then
         write(*,101) text, value, ', THE EXECUTION IS SUCCESSFUL.'
       elseif(value .lt. 0 )then
@@ -759,29 +788,29 @@ module library
         write(*,102) '    THE',val, text2
       endif
       print*,' '
-
+      
       101 format (A, 1x, I1, A)
       102 format (A, I3, A)
-
+      
     end subroutine MKLsolverResult
-
-    subroutine writeMatrix(Matrix, unit, name1, Vector, unit2, name2)
+    
+    subroutine writeMatrix(Matrix, unit1, name1, Vector, unit2, name2)
       implicit none
       character(*) :: name1, name2
-      integer :: i, j, mrow, ncol, unit, unit2
+      integer :: i, j, mrow, ncol, unit1, unit2
       double precision, dimension(2*n_nodes+n_pnodes ,2*n_nodes+n_pnodes ), intent(in) :: Matrix
       double precision, dimension(2*n_nodes+n_pnodes ,1), intent(in) :: Vector
-
+      
       100 format (900E20.12)
-
+      
       mrow = 2*n_nodes+n_pnodes 
       ncol = 2*n_nodes+n_pnodes
-      open(unit=unit, file= name1, ACTION="write", STATUS="replace")
+      open(unit=unit1, file= name1, ACTION="write", STATUS="replace")
 
       do i=1,2*n_nodes+n_pnodes 
-        write(unit, 100)( Matrix(i,j) ,j=1,2*n_nodes+n_pnodes)
+        write(unit1, 100)( Matrix(i,j) ,j=1,2*n_nodes+n_pnodes)
       end do
-      close(unit)
+      close(unit1)
     
       open(unit=unit2, file= name2, ACTION="write", STATUS="replace ")
       do i=1,2*n_nodes+n_pnodes 
