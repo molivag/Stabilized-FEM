@@ -358,31 +358,64 @@ module library
       integer, dimension(nUne,1), intent(in)           :: node_id_map
       integer, intent(in)                              :: ndDOF 
       integer :: i, j, row_node, row, col_node, col !nodal Degrees of Freedom
-
+      
       !K 
-
+      
       do i = 1, nUne
         row_node = node_id_map(i,1)
         row = ndDOF*row_node - (ndDOF-1)
-
+        
         do j = 1, nUne
           col_node = node_id_map(j,1)
           col = ndDOF*col_node - (ndDOF-1)
           K(row:row+ndDOF-1, col:col+ndDOF-1) =  K(row:row+ndDOF-1, col:col+ndDOF-1) + &
           ke((i-1)*ndDOF+1:i*ndDOF,(j-1)*ndDOF+1:j*ndDOF)
         enddo
-
+        
       enddo
-
-
+      
+      
       return
-
+      
     end subroutine AssembleK
-
-    subroutine GlobalK( A_K, dN_dxi, dN_deta) !Al tener un solo parametro de salida puedo declararla como funcion
-
+    
+    
+    subroutine AssemblyStab(ke, node_id_map, ndDOF, K)
+      
       implicit none
-
+      double precision, dimension(n_pnodes,n_pnodes), intent(in out)  :: K !Global Stiffnes matrix debe 
+      !                                                           llevar inout por que entra como variable (IN) 
+      !                                                            pero en esta funcion se modifica (out)
+      double precision, dimension(nPne, nPne), intent(in) :: ke
+      integer, dimension(nPne,1), intent(in)              :: node_id_map
+      integer, intent(in)                                 :: ndDOF 
+      integer :: i, j, row_node, row, col_node, col !nodal Degrees of Freedom
+      
+      !K 
+      
+      do i = 1, nPne
+        row_node = node_id_map(i,1)
+        row = ndDOF*row_node - (ndDOF-1)
+        
+        do j = 1, nPne
+          col_node = node_id_map(j,1)
+          col = ndDOF*col_node - (ndDOF-1)
+          K(row:row+ndDOF-1, col:col+ndDOF-1) =  K(row:row+ndDOF-1, col:col+ndDOF-1) + &
+          ke((i-1)*ndDOF+1:i*ndDOF,(j-1)*ndDOF+1:j*ndDOF)
+        enddo
+        
+      enddo
+      
+      
+      return
+      
+    end subroutine AssemblyStab
+    
+    
+    subroutine GlobalK( A_K, dN_dxi, dN_deta) !Al tener un solo parametro de salida puedo declararla como funcion
+      
+      implicit none
+      
       double precision, dimension(2*n_nodes+n_pnodes, 2*n_nodes+n_pnodes), intent(out) :: A_K  !Global Stiffnes matrix
       double precision, dimension(nUne,size(gauss_points,1)), intent(in)               :: dN_dxi, dN_deta
       double precision, allocatable, dimension(:,:)     :: dNp_dxi, dNp_deta
@@ -395,6 +428,7 @@ module library
       double precision, dimension(2*DimPr, 2*DimPr)     :: Jb ! aqui tmb es Dof no DimPr pero 2 para vel y dos para P
       double precision, dimension(2*DimPr, DimPr*nUne)  :: B  !no es DimPr es Dof del elemento en cuestion, en este caso deberia ser
       double precision, dimension(DimPr*1, 1*nPne)      :: Bp !2 para la matriz elemental de velocidad y uno para la matriz elemental
+      double precision, dimension(nPne, nPne)           :: BpTBp
       double precision, dimension(1*nPne, DimPr*1 )     :: Bp_T
       double precision, dimension(Dof,DimPr*DimPr)      :: HJ
       double precision, dimension(Dof,2*nUne)           :: HJB
@@ -463,7 +497,7 @@ module library
       
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
-      tau_stab = ( nodes(2,2) - nodes(3,2) ) /materials !tau stabilization
+      tau_stab = ( nodes(10,2) - nodes(9,2) )**2 /materials !tau stabilization
 
       !for-loop: compute K12 block of K
       do e = 1, Nelem
@@ -488,9 +522,9 @@ module library
           part6(:,1) = Np(:,gp)
           part7 = transpose(part6)
           part8 = matmul(dn,part7)
-          kep = kep + part8 * (detJ*gauss_weights(gp,1)) 
-          ! Stab = Stab + tau_stab * (Bp_T * Bp) * detJ * gauss_weights(gp,1)
-          Stab = Stab + tau_stab * detJ * gauss_weights(gp,1)
+          BpTBp = matmul(Bp_T,Bp) 
+          kep  = kep + part8 * (detJ*gauss_weights(gp,1)) 
+          Stab = Stab + tau_stab * BpTBp * detJ * gauss_weights(gp,1)
         end do  
       
         ! for-loop: assemble ke into global KP (it mean K12)
@@ -500,14 +534,14 @@ module library
           do j = 1, nPne
             col_node = pnode_id_map(j,1)
             pnode_id = pnodes(col_node,2)
-            col = pnode_id
+            col = pnode_id !Aqui puedo sustituir directamente y evito esta misma linea
             K12(row:row+1, col) = K12(row:row+1, col) + kep(2*i-1:i*2, j)
           end do
         end do 
         
         ! for-loop: assemble ke into global KP
         ! Aqui se puede ensablar llamando a la funcion AssembleK
-        call AssembleK(K22, Stab, pnode_id_map, 1) ! assemble global K
+        call AssemblyStab(Stab, pnode_id_map, 1, K22) ! assemble global K
 
         !Desde aqui
           ! print*, 'element number', e
