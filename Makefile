@@ -1,4 +1,5 @@
 #========== Definicion de variables ==========
+# Actualizado el 21/09/2021
 # Actualizado el 15/07/2021
 #	compiler
 FC = ifort
@@ -55,6 +56,8 @@ $(MAIN) : $(OBJS)
 #	Regla ficticia, es decir que no tiene dependencias (phony rules)
 clean :
 	@$(RM) *.o *.mod *.exe $(MAIN)
+	@$(RM) -rf results/*.txt
+#@$(RM) results/ *.txt
 #	clean no tiene dependencias pero si objetivos
 	@echo '||'
 	@echo ' - Everything is clean'
