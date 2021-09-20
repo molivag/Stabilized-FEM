@@ -32,23 +32,15 @@ module library
 
       integer :: i, j, status, UnitNum, NumRows, NumCols
       character (len=*), intent (in) :: FileName
+      character(len=:), allocatable :: fileplace
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
 
-      open (unit = UnitNum, file =FileName, status='old', action='read' , iostat = status)
+      fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
       
-      if(nUne .eq. 8)then
-        goto 5001
-      elseif(nUne .eq. 4)then
-        goto 5002
-      end if
-
+      open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
+      
       ! read in values
-      5001 read(UnitNum,*) ((Real_Array(i,j), j=1,NumCols), i=1,NumRows)
-      goto 5003
-      5002 read(UnitNum,*) ((Real_Array(i,j), j=1,NumCols), i=2-1,NumRows-1,2)
-      
-      5003 continue
-      
+      read(UnitNum,*) ((Real_Array(i,j), j=1,NumCols), i=1,NumRows)
       print *, "Status_Real_File ", status
 
       close (UnitNum)
@@ -59,11 +51,12 @@ module library
 
       integer :: i, j, status
       integer, intent(in)            :: UnitNum, NumRows, NumCols
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
       character (len=*), intent (in) :: FileName
       integer, dimension (1:NumRows, 1:NumCols), intent (out) :: IntegerArray
 
 
-      open (unit = UnitNum, file =FileName, status='old', action='read' , iostat = status)
+      open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
 
       ! read in values
       read(UnitNum,*) ((IntegerArray(i,j), j=1,NumCols), i=1,NumRows)
@@ -76,11 +69,12 @@ module library
     subroutine ReadReal(UnitNum, FileName, value)
 
       integer :: status, UnitNum
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
       character (len=*), intent (in) :: FileName
       real :: value
 
 
-      open (unit = UnitNum, file =FileName, status='old', action='read' , iostat = status)
+      open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
 
       ! read in values
       read(UnitNum,*) value
@@ -99,11 +93,12 @@ module library
       !- - - - - - - - - - * * * * * * * * * * - - - - - - - - - -
 
       integer :: i, j, status, UnitNum, NumRows, NumCols
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
       character (len=*), intent (in) :: FileName
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
 
 
-      open (unit = UnitNum, file =FileName, status='old', action='read' , iostat = status)
+      open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
 
       ! read in values
       read(UnitNum,22) ((Real_Array(i,j), j=1,NumCols), i=1,NumRows)
@@ -452,13 +447,10 @@ module library
       real, dimension(nPne,DimPr)   :: pelement_nodes
       integer, dimension(nUne,1)    :: node_id_map
       integer, dimension(nPne,1)    :: pnode_id_map
-      integer                       :: gp, ngp, e, i,j, row_node, row 
+      integer                       :: gp, ngp, e, i,j, row_node, row, rowstab, colstab!, kk,l, mrow, ncol,
       integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
       real                          :: tau_stab 
 
-      integer :: mrow, ncol, rowstab, colstab, kk,l
-      
-      
       
 
       ngp = size(gauss_points,1) !TMB PODRIA SER VARIABLE PERMANENTE CON SAVE
@@ -489,11 +481,11 @@ module library
          !aqui marcaba error por que gauss_weights es un vector columna y debe indicarse con dos indices
          ke = ke + part3 * gauss_weights(gp,1)  !
         end do
-
+        
         call AssembleK(A_K, ke, node_id_map, 2) ! assemble global K
-      
+        
       end do
-
+      
       !Setup for K12 block or KuP
       allocate (K12(n_nodes*2,n_pnodes),K12_T(n_pnodes,n_nodes*2))
       allocate (K22(n_pnodes,n_pnodes))
@@ -503,7 +495,7 @@ module library
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
       tau_stab = ( nodes(10,2) - nodes(9,2) )**2 /materials !tau stabilization
-
+      
       !for-loop: compute K12 block of K
       do e = 1, Nelem
         kep = 0.0
@@ -531,7 +523,7 @@ module library
           kep  = kep + part8 * (detJ*gauss_weights(gp,1)) 
           Stab = Stab + tau_stab * BpTBp * detJ * gauss_weights(gp,1)
         end do  
-      
+        
         ! for-loop: assemble ke into global KP (it mean K12)
         do i = 1, nUne
           row_node = node_id_map(i,1)
@@ -579,27 +571,20 @@ module library
           !   end do
         !Y hasta aqui para comprobar la matriz K12
       end do
-
+      
   !Imprimir aqui matriz K22 global para verificar el ensamblaje
-
+      
      !100 format (900E20.12)
-
+      
       !mrow = n_pnodes 
       !ncol = n_pnodes
       !open(unit=555, file= "AssembleStab.txt", ACTION="write", STATUS="replace")
-
+      
       !do i=1,mrow 
       !  write(555, 100)( K22(i,j) ,j=1,ncol)
       !end do
       !close(555)
-
-
-
-
-
-
-
-
+      
       !========== Filling the symetric (upper and lower) part of K ==========
       !========== Upper
       dimAK = size(A_K,1)
@@ -611,19 +596,18 @@ module library
         end do
       end do
       !========== Lower
-      K12_T = transpose(-K12)
+      K12_T = transpose(K12)
       do i = 2*n_nodes+1, (2*n_nodes+n_pnodes)
         do j = 1, 2*n_nodes 
-          A_K(i, j) = K12_T(i-symmetric,j)
+          A_K(i, j) = -K12_T(i-symmetric,j)
         end do
       end do
       !========== Filling the stabilization global matrix into A_K ==========
       RowStab = dimAK - n_pnodes 
       ColStab = dimAK - n_pnodes 
-!      
       do i = RowStab, 2*n_nodes+n_pnodes -1
         do j = ColStab, 2*n_nodes+n_pnodes-1
-          A_K(i, j) = K22((i+1)-RowStab,(j+1)-ColStab)
+          A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
         end do
       end do
       
@@ -641,6 +625,9 @@ module library
       DEALLOCATE(K12)
       DEALLOCATE(K12_T)
       DEALLOCATE(Np)
+      DEALLOCATE(dNp_dxi)
+      DEALLOCATE(dNp_deta)
+      DEALLOCATE(K22)
     end subroutine GlobalK
     
     
@@ -658,9 +645,7 @@ module library
       !=========================================================================
       implicit none
       
-      ! real, dimension(341,3)    :: nodes
-      ! integer, parameter        :: n_nodes = size(nodes,1)
-      
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
       integer, intent(out) :: NoBV, NoBVcol
       integer :: ierror, a ,b, c, i
       real    :: x, y
@@ -677,7 +662,7 @@ module library
       b = 0
       c = 0 
       
-      open(unit=100, file='Fbcsvp.dat',Status= 'replace', action= 'write',iostat=ierror)
+      open(unit=100, file=fileplace//'Fbcsvp.dat',Status= 'replace', action= 'write',iostat=ierror)
       NoBVcol = size(nodes,2)     
      
       do i =1, n_nodes
@@ -796,6 +781,7 @@ module library
     
     subroutine writeMatrix(Matrix, unit1, name1, Vector, unit2, name2)
       implicit none
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/results/"
       character(*) :: name1, name2
       integer :: i, j, mrow, ncol, unit1, unit2
       double precision, dimension(2*n_nodes+n_pnodes ,2*n_nodes+n_pnodes ), intent(in) :: Matrix
@@ -805,14 +791,14 @@ module library
       
       mrow = 2*n_nodes+n_pnodes 
       ncol = 2*n_nodes+n_pnodes
-      open(unit=unit1, file= name1, ACTION="write", STATUS="replace")
+      open(unit=unit1, file= fileplace//name1, ACTION="write", STATUS="replace")
 
       do i=1,2*n_nodes+n_pnodes 
         write(unit1, 100)( Matrix(i,j) ,j=1,2*n_nodes+n_pnodes)
       end do
       close(unit1)
     
-      open(unit=unit2, file= name2, ACTION="write", STATUS="replace ")
+      open(unit=unit2, file= fileplace//name2, ACTION="write", STATUS="replace ")
       do i=1,2*n_nodes+n_pnodes 
         write(unit2, 100) Vector(i,1)
       end do
