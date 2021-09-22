@@ -8,7 +8,9 @@ program main_Stokes
   real(8), allocatable, dimension(:,:) :: A_K, Sv, Solution, N, dN_dxi, dN_deta
   real(4), allocatable, dimension(:,:) :: Fbcsvp
   integer                              :: NoBV, NoBVcol
-  !=============== S O L V E R ===============              
+  double precision, dimension(n_nodes,6)  :: results
+  character(len=20)                         :: nameFile
+ !=============== S O L V E R ===============              
   external                             :: mkl_dgetrfnp, dgetrf, dgetrs
   integer                              :: S_m, S_n, S_lda, S_ldb, S_infoLU, S_nrhs , S_infoSOL
   integer, allocatable, dimension(:)   :: S_ipiv
@@ -16,16 +18,16 @@ program main_Stokes
   ! - - - - - - - - - - - - - - - * * * Fin * * * * * * * - - - - - - - - - - - - - - - - 
   
   call GeneralInfo( )
-  call ReadIntegerFile(10,"elements_linear.dat", Nelem, nUne + 1, elements)  
-  call ReadRealFile(20,"nodes_linear.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option para 
+  call ReadIntegerFile(10,"elementsQ1.dat", Nelem, nUne + 1, elements)  
+  call ReadRealFile(20,"nodesQ1.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option para 
   call ReadReal(30,"materials.dat", materials)    !Para dreducir el numero de subrutinas, usar la sentencia option para      
-  call ReadIntegerFile(40,"pnodes_linear.dat", n_nodes,2, pnodes)
-  call ReadIntegerFile(50,"elements_linear.dat", Nelem,nPne + 1, pelements)
+  call ReadIntegerFile(40,"pnodesQ1.dat", n_nodes,2, pnodes)
+  call ReadIntegerFile(50,"elementsQ1.dat", Nelem,nPne + 1, pelements)
   print*, ' '
   print*, '!=============== INFO DURING EXECUTION ===============!'
   
   call GetQuadGauss(ngp,ngp,gauss_points, gauss_weights)
-  ! call GetTriGauss(gauss_points, gauss_weights)
+  !call GetTriGauss(gauss_points, gauss_weights)
   call ShapeFunctions(gauss_points, nUne, N, dN_dxi, dN_deta)  
   
   allocate(A_K(2*n_nodes+n_pnodes, 2*n_nodes+n_pnodes))
@@ -47,7 +49,7 @@ program main_Stokes
   DEALLOCATE( dN_dxi)
   DEALLOCATE( dN_deta)
   DEALLOCATE( Fbcsvp)
-  call writeMatrix(A_K, 111, 'Global_K_4quad.dat', Sv, 222, 'Global_Sv_4quad.dat') !write global matrix and vector
+  !call writeMatrix(A_K, 111, 'Stab_GlobalK.txt', Sv, 222, 'Stab_GlobalSv.txt') !write global matrix and vector
   DEALLOCATE( Sv )
   
   print*,' '
@@ -72,7 +74,12 @@ program main_Stokes
   call MKLsolverResult( S_infoSOL )
   
   DEALLOCATE( S_ipiv)
-  call writeMatrix(A_K, 333, 'A_4K_LU.dat', Solution, 444, 'Solution4.dat')
+  !all writeMatrix(A_K, 333, 'StabA3K_LU.txt', Solution, 444, 'SolNSP1.txt')
+
+  write(*,*) 'File name for Posprocess'
+  read(*,*) nameFile 
+  call PosProcess(Solution, results, namefile)
+
   DEALLOCATE( A_K)
   DEALLOCATE( Solution)
   print*,' '  

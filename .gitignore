@@ -4,7 +4,7 @@ Figures/
 *.o
 *.mod
 *.x
-meshes/
+Msh/
 .ipynb_checkpoints/
 *.ipynb
 pos/
