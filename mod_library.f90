@@ -494,8 +494,8 @@ module library
       
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
-      tau_stab = ( nodes(10,2) - nodes(9,2) )**2 /materials !tau stabilization
-      
+      !tau_stab =  4* (h**2 /materials) !tau stabilization puedo pedir por teclado a h
+      tau_stab = 0.04
       !for-loop: compute K12 block of K
       do e = 1, Nelem
         kep = 0.0
@@ -798,15 +798,57 @@ module library
       end do
       close(unit1)
     
-      open(unit=unit2, file= fileplace//name2, ACTION="write", STATUS="replace ")
+      open(unit=unit2, file= fileplace//name2, ACTION="write", STATUS="replace")
       do i=1,2*n_nodes+n_pnodes 
         write(unit2, 100) Vector(i,1)
       end do
       close(unit2)
-
+    
     end subroutine writeMatrix
+    
+    subroutine PosProcess(solution, results, nameFile)
+      
+      implicit none
+      
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/pos/"
+      double precision, dimension(2*n_nodes+n_pnodes, 1), intent(in) :: solution
+      double precision, dimension(n_nodes,6), intent(out) :: results
+      double precision, dimension(1, 2*n_nodes+n_pnodes)  :: solution_T
+      double precision, dimension(1,n_nodes) :: xcor, ycor
+      character(*) :: nameFile
+      integer      :: ipoin,  prow, pnode_id
+      
+      
+     
+      
+      xcor  = spread(nodes(:,2),dim = 1, ncopies= 1)
+      ycor  = spread(nodes(:,3),dim = 1, ncopies= 1)
+      solution_T = transpose(solution)
+      prow=2*n_nodes;
+     
+      results=0.0
 
-  !Fin de contains
+      open(unit=555, file= fileplace//nameFile, ACTION="write", STATUS="New")
+      write(555,*) '%2D Cavity Driven Flow Results' 
+      write(555,905) '%Element tipe: ', ElemType,'/',ElemType 
+      write(555,900) 
+
+      do ipoin = 1, n_nodes
+        pnode_id = pnodes(ipoin,2)
+        write(555,910) ipoin, xcor(1,ipoin), ycor(1,ipoin), solution_T(1, 2*ipoin-1), solution_T(1,2*ipoin), solution(prow+pnode_id, 1)                         
+      end do
+      
+      close(555)
+      
+     900 format(//,3x,'%Point    x-coord.    y-coord.' 8x, ' Ux ', 8x, ' Uy', 10x, 'P')
+     905 format(A15, A4, A1, A4)
+     910 format(3x,I5,2(3x,f9.4),2x,3f12.5)            
+      
+    end subroutine PosProcess
+    
+   
+    
+    !Fin de contains
 
 
 
