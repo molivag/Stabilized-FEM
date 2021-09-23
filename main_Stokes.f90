@@ -9,7 +9,7 @@ program main_Stokes
   real(4), allocatable, dimension(:,:) :: Fbcsvp
   integer                              :: NoBV, NoBVcol
   double precision, dimension(n_nodes,6)  :: results
-  character(len=20)                         :: nameFile
+  character(len=20)                         :: FileName
  !=============== S O L V E R ===============              
   external                             :: mkl_dgetrfnp, dgetrf, dgetrs
   integer                              :: S_m, S_n, S_lda, S_ldb, S_infoLU, S_nrhs , S_infoSOL
@@ -74,16 +74,17 @@ program main_Stokes
   call MKLsolverResult( S_infoSOL )
   
   DEALLOCATE( S_ipiv)
-  !all writeMatrix(A_K, 333, 'StabA3K_LU.txt', Solution, 444, 'SolNSP1.txt')
+  !call writeMatrix(A_K, 333, 'StabA3K_LU.txt', Solution, 444, 'SolQ1.txt')
 
-  write(*,*) 'File name for Posprocess'
-  read(*,*) nameFile 
-  call PosProcess(Solution, results, namefile)
+  write(*,*) 'Name for posprocess file...'
+  read(*,*) FileName 
+  call PosProcess(Solution, FileName)
 
   DEALLOCATE( A_K)
   DEALLOCATE( Solution)
   print*,' '  
-  print*, 'Files written succesfully. . . . .'
+  print*, 'Files written succesfully on Res/ . . . . .'
+  
   print*, ' ' 
 
 end program main_Stokes

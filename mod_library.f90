@@ -35,7 +35,7 @@ module library
       character(len=:), allocatable :: fileplace
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
 
-      fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
+      fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       
       open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
       
@@ -51,7 +51,7 @@ module library
 
       integer :: i, j, status
       integer, intent(in)            :: UnitNum, NumRows, NumCols
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       integer, dimension (1:NumRows, 1:NumCols), intent (out) :: IntegerArray
 
@@ -69,7 +69,7 @@ module library
     subroutine ReadReal(UnitNum, FileName, value)
 
       integer :: status, UnitNum
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       real :: value
 
@@ -93,7 +93,7 @@ module library
       !- - - - - - - - - - * * * * * * * * * * - - - - - - - - - -
 
       integer :: i, j, status, UnitNum, NumRows, NumCols
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
 
@@ -645,7 +645,7 @@ module library
       !=========================================================================
       implicit none
       
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/geometry/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       integer, intent(out) :: NoBV, NoBVcol
       integer :: ierror, a ,b, c, i
       real    :: x, y
@@ -781,7 +781,7 @@ module library
     
     subroutine writeMatrix(Matrix, unit1, name1, Vector, unit2, name2)
       implicit none
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/results/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
       character(*) :: name1, name2
       integer :: i, j, mrow, ncol, unit1, unit2
       double precision, dimension(2*n_nodes+n_pnodes ,2*n_nodes+n_pnodes ), intent(in) :: Matrix
@@ -806,13 +806,12 @@ module library
     
     end subroutine writeMatrix
     
-    subroutine PosProcess(solution, results, nameFile)
+    subroutine PosProcess(solution, nameFile)
       
       implicit none
       
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/pos/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
       double precision, dimension(2*n_nodes+n_pnodes, 1), intent(in) :: solution
-      double precision, dimension(n_nodes,6), intent(out) :: results
       double precision, dimension(1, 2*n_nodes+n_pnodes)  :: solution_T
       double precision, dimension(1,n_nodes) :: xcor, ycor
       character(*) :: nameFile
@@ -826,8 +825,6 @@ module library
       solution_T = transpose(solution)
       prow=2*n_nodes;
      
-      results=0.0
-
       open(unit=555, file= fileplace//nameFile, ACTION="write", STATUS="New")
       write(555,*) '%2D Cavity Driven Flow Results' 
       write(555,905) '%Element tipe: ', ElemType,'/',ElemType 

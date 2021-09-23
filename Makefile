@@ -56,7 +56,7 @@ $(MAIN) : $(OBJS)
 #	Regla ficticia, es decir que no tiene dependencias (phony rules)
 clean :
 	@$(RM) *.o *.mod *.exe $(MAIN)
-	@$(RM) -rf results/*.txt
+	@$(RM) -rf Res/*.txt
 #@$(RM) results/ *.txt
 #	clean no tiene dependencias pero si objetivos
 	@echo '||'
