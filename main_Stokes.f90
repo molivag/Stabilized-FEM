@@ -8,8 +8,7 @@ program main_Stokes
   real(8), allocatable, dimension(:,:) :: A_K, Sv, Solution, N, dN_dxi, dN_deta
   real(4), allocatable, dimension(:,:) :: Fbcsvp
   integer                              :: NoBV, NoBVcol
-  double precision, dimension(n_nodes,6)  :: results
-  character(len=20)                         :: FileName
+  !character(len=20)                    :: FileName
  !=============== S O L V E R ===============              
   external                             :: mkl_dgetrfnp, dgetrf, dgetrs
   integer                              :: S_m, S_n, S_lda, S_ldb, S_infoLU, S_nrhs , S_infoSOL
@@ -76,9 +75,13 @@ program main_Stokes
   DEALLOCATE( S_ipiv)
   !call writeMatrix(A_K, 333, 'StabA3K_LU.txt', Solution, 444, 'SolQ1.txt')
 
-  write(*,*) 'Name for posprocess file...'
-  read(*,*) FileName 
-  call PosProcess(Solution, FileName)
+  !write(*,"(A)") 'Name for mesh file...'
+  !read(*,"(A)") FileName 
+  call PosProcess(Solution, 'StokesQ1.post.msh', 'msh')
+
+  !write(*,"(A)") 'Name for results file...'
+  !read(*,"(A)") FileName 
+  call PosProcess(Solution, 'StokesQ1.post.res', 'res')
 
   DEALLOCATE( A_K)
   DEALLOCATE( Solution)
