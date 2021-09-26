@@ -2,7 +2,7 @@ module Parameters
   
   implicit none
   
-  character(len=6), parameter  :: ElemType = 'Quad'
+  character(len=14), parameter  :: ElemType = 'Quadrilateral'!,'Triangle'
   integer, parameter :: DimPr     = 2     !Dimension del problema 
   integer, parameter :: Nelem     = 100   !Number of elements
   integer, parameter :: n_nodes   = 121   !Total number of velocity nodes

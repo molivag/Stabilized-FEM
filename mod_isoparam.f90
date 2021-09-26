@@ -127,7 +127,7 @@ module Isoparametric
 
       select case(ElemType)
 
-        CASE ('Quad')
+        CASE ('Quadrilateral')
           select case(Nne)
           case  (8)
            ! Shape functions for square (quadrilaters) linear elements
@@ -270,7 +270,7 @@ module Isoparametric
             write(*,*) 'Invalid number of nodes in the element.'
           end select
 
-        CASE ('Trian')
+        CASE ('Triangle')
 			    !  |
 			    !  |        o
 			    !  |       / \
