@@ -12,15 +12,15 @@ module library
       print*, ' '
       print*,'!==================== GENERAL INFO ===============!'
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='
-      write(*,*)'1.- Dimension of the problem:    ', DimPr, ' |'
-      write(*,*)'2.- Type of element:             ','        ',ElemType,'|'
-      write(*,*)'3.- Total number of elements:    ', Nelem,' |'
-      write(*,*)'4.- Total velocity nodes:        ', n_nodes, ' |'
-      write(*,*)'5.- Total preasure nodes:        ', n_pnodes, ' |'
-      write(*,*)'6.- DoF per element:             ', Dof, ' |'
-      write(*,*)'7.- Velocity nodes per element:  ', nUne, ' |'
-      write(*,*)'8.- Preasure nodes per element:  ', nPne, ' |'
-      write(*,*)'9.- Total of Gauss points:       ', totGp,' |'
+      write(*,"(A21,8X,A14,1X,A2)") '1.- Dimension of the problem:    ', DimPr, '            |'
+      write(*,"(A21,8X,A14,1X,A2)") '2.- Element type:'                , ElemType,'|'
+      write(*,"(A21,8X,A14,1X,A2)") '3.- Total number of elements:    ', Nelem,'             |'
+      write(*,"(A21,8X,A14,1X,A2)") '4.- Total velocity nodes:        ', n_nodes, '          |'
+      write(*,"(A21,8X,A14,1X,A2)") '5.- Total preasure nodes:        ', n_pnodes, '         |'
+      write(*,"(A21,8X,A14,1X,A2)") '6.- DoF per element:             ', Dof, '              |'
+      write(*,"(A21,8X,A14,1X,A2)") '7.- Velocity nodes per element:  ', nUne, '             |'
+      write(*,"(A21,8X,A14,1X,A2)") '8.- Preasure nodes per element:  ', nPne, '             |'
+      write(*,"(A21,8X,A14,1X,A2)") '9.- Total of Gauss points:       ', totGp,'             |'
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='    
       write(*,*)' '
       print*,'!============== FILE READING STATUS ============!'
@@ -806,40 +806,91 @@ module library
     
     end subroutine writeMatrix
     
-    subroutine PosProcess(solution, nameFile)
+    subroutine PosProcess(solution, nameFile1, activity)!, nameFile2)
       
       implicit none
       
       character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
-      double precision, dimension(2*n_nodes+n_pnodes, 1), intent(in) :: solution
-      double precision, dimension(1, 2*n_nodes+n_pnodes)  :: solution_T
+      real*8, dimension(2*n_nodes+n_pnodes, 1), intent(in) :: solution
+      character(*), intent(in)                             :: nameFile1, activity
+      double precision, dimension(1, 2*n_nodes+n_pnodes)   :: solution_T
       double precision, dimension(1,n_nodes) :: xcor, ycor
-      character(*) :: nameFile
-      integer      :: ipoin,  prow, pnode_id
+      integer      :: ipoin,  prow, pnode_id 
+      integer, dimension(1, Nelem) :: conectivity1, conectivity2, conectivity3, conectivity4
       
       
-     
-      
+      solution_T = transpose(solution)
       xcor  = spread(nodes(:,2),dim = 1, ncopies= 1)
       ycor  = spread(nodes(:,3),dim = 1, ncopies= 1)
-      solution_T = transpose(solution)
-      prow=2*n_nodes;
-     
-      open(unit=555, file= fileplace//nameFile, ACTION="write", STATUS="New")
-      write(555,*) '%2D Cavity Driven Flow Results' 
-      write(555,905) '%Element tipe: ', ElemType,'/',ElemType 
-      write(555,900) 
-
-      do ipoin = 1, n_nodes
-        pnode_id = pnodes(ipoin,2)
-        write(555,910) ipoin, xcor(1,ipoin), ycor(1,ipoin), solution_T(1, 2*ipoin-1), solution_T(1,2*ipoin), solution(prow+pnode_id, 1)                         
-      end do
       
-      close(555)
+      conectivity1 = spread(elements(:,2),dim = 1, ncopies= 1)
+      conectivity2 = spread(elements(:,3),dim = 1, ncopies= 1)
+      conectivity3 = spread(elements(:,4),dim = 1, ncopies= 1)
+      conectivity4 = spread(elements(:,5),dim = 1, ncopies= 1)
       
-     900 format(//,3x,'%Point    x-coord.    y-coord.' 8x, ' Ux ', 8x, ' Uy', 10x, 'P')
-     905 format(A15, A4, A1, A4)
-     910 format(3x,I5,2(3x,f9.4),2x,3f12.5)            
+      prow=2*n_nodes
+      
+      open(unit=555, file= fileplace//nameFile1, ACTION="write", STATUS="replace")
+      !open(unit=550, file= fileplace//nameFile2, ACTION="write", STATUS="replace")
+      write(555,"(A)") '#2D Cavity Driven Flow Results' 
+      write(555,900) '#Element tipe: ', ElemType,'/',ElemType 
+      write(555,*) ' '
+      write(555,*) ' '
+      write(555,*) ' '
+      
+      if(activity == "msh")then !quitar este if y acomodar el numero de unidad
+        
+        write(555,902) 'MESH', '"Cavity"', 'dimension', DimPr, 'ElemType', ElemType, 'Nnode', nUne
+        write(555,"(A)")'Coordinates'
+        write(555,"(A)") '#   No        X           Y'
+        do ipoin = 1, n_nodes
+          write(555,906) ipoin, xcor(1,ipoin), ycor(1,ipoin)
+        end do
+        write(555,"(A)") 'End Coordinates'
+        write(555,"(A)") 'Elements'
+        do ipoin = 1, Nelem
+          write(555,908) ipoin, conectivity1(1,ipoin), conectivity2(1,ipoin), conectivity3(1,ipoin), conectivity4(1,ipoin)
+        end do
+        write(555,"(A)") 'End Elements'
+        close(555)
+        
+      elseif(activity == "res")then
+        write(555,"(A)") 'GiD Post Results File 1.0'
+        write(555,"(A)") 'Result "{Velocity Components}" "Velocity" 0 Vector OnNodes'
+        write(555,"(A)") 'ComponentNames "U_X" "U_Y" "U_Z" "" '
+        write(555,"(A)") 'Values'
+        ! se escribe el res de las componentes de la velocidad
+        write(555,910) 
+        do ipoin = 1, n_nodes
+          write(555,912) ipoin, solution_T(1, 2*ipoin-1), solution_T(1,2*ipoin)
+        end do
+        write(555,"(A)") 'End Values'
+        write(555,"(A)") 'Result "Preassure" "Preassure" 0 Scalar OnNodes'
+        write(555,"(A)") 'ComponentNames "" '
+        write(555,"(A)") 'Values'
+        ! se escribe el res de la presion 
+        write(555,914)
+        do ipoin = 1, n_nodes
+          pnode_id = pnodes(ipoin,2)
+          write(555,916) ipoin, solution(prow+pnode_id, 1)  
+        end do
+        write(555,"(A)") 'End Values'
+        close(555)
+        
+      else
+        write(*,"(A)") ' "Activity" must be "msh" or "res" '
+        close(555)
+        stop
+      end if
+      
+      900 format(A15, A13, A1, A13)
+      902 format(A4,1x,A8,1X,A9,1X,I1,1X,A8,1X,A13,A6,1X,I1)
+      906 format(I5,2(3x,f9.4)) !format for msh           
+      908 format(I4, 3(2x,I4) )
+      910 format('#',3x,'No    ' 3x, ' Ux ', 8x, ' Uy')
+      912 format(I5,2x,2f12.5) !format for res velocity
+      914 format('#',3x,'No'     9x, 'P')
+      916 format(I4,2x,f12.5)  !format for res preassure
       
     end subroutine PosProcess
     
