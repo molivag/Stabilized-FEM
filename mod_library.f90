@@ -815,14 +815,12 @@ module library
       character(*), intent(in)                             :: nameFile1, activity
       double precision, dimension(1, 2*n_nodes+n_pnodes)   :: solution_T
       double precision, dimension(1,n_nodes) :: xcor, ycor
-      integer      :: ipoin,  prow, pnode_id 
+      integer      :: ipoin,  prow, pnode_id
       integer, dimension(1, Nelem) :: conectivity1, conectivity2, conectivity3, conectivity4
-      
       
       solution_T = transpose(solution)
       xcor  = spread(nodes(:,2),dim = 1, ncopies= 1)
       ycor  = spread(nodes(:,3),dim = 1, ncopies= 1)
-      
       conectivity1 = spread(elements(:,2),dim = 1, ncopies= 1)
       conectivity2 = spread(elements(:,3),dim = 1, ncopies= 1)
       conectivity3 = spread(elements(:,4),dim = 1, ncopies= 1)
@@ -849,7 +847,7 @@ module library
         write(555,"(A)") 'End Coordinates'
         write(555,"(A)") 'Elements'
         do ipoin = 1, Nelem
-          write(555,908) ipoin, conectivity1(1,ipoin), conectivity2(1,ipoin), conectivity3(1,ipoin), conectivity4(1,ipoin)
+          write(555,908) elements(ipoin,:) 
         end do
         write(555,"(A)") 'End Elements'
         close(555)
@@ -886,7 +884,7 @@ module library
       900 format(A15, A13, A1, A13)
       902 format(A4,1x,A8,1X,A9,1X,I1,1X,A8,1X,A13,A6,1X,I1)
       906 format(I5,2(3x,f9.4)) !format for msh           
-      908 format(I4, 3(2x,I4) )
+      908 format(5(2x,I4) )
       910 format('#',3x,'No    ' 3x, ' Ux ', 8x, ' Uy')
       912 format(I5,2x,2f12.5) !format for res velocity
       914 format('#',3x,'No'     9x, 'P')

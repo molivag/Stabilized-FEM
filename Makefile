@@ -14,11 +14,12 @@ FC = ifort
 #	debugger option
 CFLAGS += -g
 #	warning flags
-CFLAGS += -warn all
-#	optimization flags
+CFLAGS += -warn all 
+#	optimization flags 
 CFLAGS += -O0 -heap-arrays
 #	error finding options
-CFLAGS += -traceback -check all -CB -fp-stack-check
+CFLAGS += -check all -traceback -CB -fp-stack-check -check noarg_temp_created 
+# at the end of the tests return to -check all option
 
 #	source files
 SRCS = mod_parameters mod_isoparam mod_library main_Stokes
