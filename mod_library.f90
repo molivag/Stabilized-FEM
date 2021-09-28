@@ -12,15 +12,15 @@ module library
       print*, ' '
       print*,'!==================== GENERAL INFO ===============!'
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='
-      write(*,"(A21,8X,A14,1X,A2)") '1.- Dimension of the problem:    ', DimPr, '            |'
-      write(*,"(A21,8X,A14,1X,A2)") '2.- Element type:'                , ElemType,'|'
-      write(*,"(A21,8X,A14,1X,A2)") '3.- Total number of elements:    ', Nelem,'             |'
-      write(*,"(A21,8X,A14,1X,A2)") '4.- Total velocity nodes:        ', n_nodes, '          |'
-      write(*,"(A21,8X,A14,1X,A2)") '5.- Total preasure nodes:        ', n_pnodes, '         |'
-      write(*,"(A21,8X,A14,1X,A2)") '6.- DoF per element:             ', Dof, '              |'
-      write(*,"(A21,8X,A14,1X,A2)") '7.- Velocity nodes per element:  ', nUne, '             |'
-      write(*,"(A21,8X,A14,1X,A2)") '8.- Preasure nodes per element:  ', nPne, '             |'
-      write(*,"(A21,8X,A14,1X,A2)") '9.- Total of Gauss points:       ', totGp,'             |'
+      write(*,"(A30,8X,I4,1X,A11)") '1.- Dimension of the problem:    ', DimPr, '  |'
+      write(*,"(A31,8X,A13,1X,A1)") '2.- Element type:                ', ElemType,'|'
+      write(*,"(A30,8X,I4,1X,A11)") '3.- Total number of elements:    ', Nelem,'   |'
+      write(*,"(A30,8X,I4,1X,A11)") '4.- Total velocity nodes:        ', n_nodes, '|'
+      write(*,"(A30,8X,I4,1X,A11)") '5.- Total preasure nodes:        ', n_pnodes, '|'
+      write(*,"(A30,8X,I4,1X,A11)") '6.- DoF per element:             ', Dof, '    |'
+      write(*,"(A30,8X,I4,1X,A11)") '7.- Velocity nodes per element:  ', nUne, '   |'
+      write(*,"(A30,8X,I4,1X,A11)") '8.- Preasure nodes per element:  ', nPne, '   |'
+      write(*,"(A30,8X,I4,1X,A11)") '9.- Total of Gauss points:       ', totGp,'   |'
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='    
       write(*,*)' '
       print*,'!============== FILE READING STATUS ============!'
@@ -494,8 +494,7 @@ module library
       
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
-      !tau_stab =  4* (h**2 /materials) !tau stabilization puedo pedir por teclado a h
-      tau_stab = 0.04
+      tau_stab =  4* (0.1**2 /materials) !tau stabilization puedo pedir por teclado a h
       !for-loop: compute K12 block of K
       do e = 1, Nelem
         kep = 0.0
@@ -763,7 +762,7 @@ module library
       integer :: value, val
       character(len=30) :: text
       character(len=35) :: text2
-      text =  '    *SYSTEM SOLVED WITH STATUS'
+      text =  '   *SYSTEM SOLVED WITH STATUS'
       text2 = '-TH PARAMETER HAD AN ILLEGAL VALUE.'
       
       if ( value .eq. 0 ) then
@@ -815,7 +814,7 @@ module library
       character(*), intent(in)                             :: nameFile1, activity
       double precision, dimension(1, 2*n_nodes+n_pnodes)   :: solution_T
       double precision, dimension(1,n_nodes) :: xcor, ycor
-      integer      :: ipoin,  prow, pnode_id
+      integer      :: ipoin,  prow, pnode_id!, xypnode, e
       integer, dimension(1, Nelem) :: conectivity1, conectivity2, conectivity3, conectivity4
       
       solution_T = transpose(solution)
@@ -830,15 +829,15 @@ module library
       
       open(unit=555, file= fileplace//nameFile1, ACTION="write", STATUS="replace")
       !open(unit=550, file= fileplace//nameFile2, ACTION="write", STATUS="replace")
-      write(555,"(A)") '#2D Cavity Driven Flow Results' 
-      write(555,900) '#Element tipe: ', ElemType,'/',ElemType 
-      write(555,*) ' '
-      write(555,*) ' '
-      write(555,*) ' '
+      !write(555,*) ' '
+      !write(555,*) ' '
+      !write(555,*) ' '
       
       if(activity == "msh")then !quitar este if y acomodar el numero de unidad
         
         write(555,902) 'MESH', '"Cavity"', 'dimension', DimPr, 'ElemType', ElemType, 'Nnode', nUne
+        write(555,"(A)") '#2D Cavity Driven Flow Results' 
+        write(555,900) '#Element tipe: ', ElemType,'/',ElemType 
         write(555,"(A)")'Coordinates'
         write(555,"(A)") '#   No        X           Y'
         do ipoin = 1, n_nodes
@@ -854,6 +853,8 @@ module library
         
       elseif(activity == "res")then
         write(555,"(A)") 'GiD Post Results File 1.0'
+        write(555,"(A)") '#2D Cavity Driven Flow Results' 
+        write(555,900) '#Element tipe: ', ElemType,'/',ElemType 
         write(555,"(A)") 'Result "{Velocity Components}" "Velocity" 0 Vector OnNodes'
         write(555,"(A)") 'ComponentNames "U_X" "U_Y" "U_Z" "" '
         write(555,"(A)") 'Values'
@@ -874,17 +875,53 @@ module library
         end do
         write(555,"(A)") 'End Values'
         close(555)
-        
+       
       else
         write(*,"(A)") ' "Activity" must be "msh" or "res" '
         close(555)
         stop
       end if
       
+     ! if (nUne .NE. nPne) then
+     !   write(550,902) 'MESH', '"Cavity"', 'dimension', DimPr, 'ElemType', ElemType, 'Nnode', nPne
+     !   write(550,"(A)") '#2D Cavity Driven Flow Results' 
+     !   write(550,900) '#Element tipe: ', ElemType,'/',ElemType 
+     !   write(550,"(A)")'Coordinates'
+     !   write(550,"(A)") '#   No        X           Y'
+     !   do e =1, Nelem
+     !     xypnode = pnodes(e,2)
+     !       if(xypnode .NE. 0)then
+     !         write(550,906) e, nodes(e,:)
+     !       else
+     !         continue
+     !       end if
+     !   end do
+     !   write(550,"(A)") 'End Coordinates'
+     !         write(550,"(A)") 'Elements'
+     !         do ipoin = 1, Nelem
+     !           write(550,908) pelements(ipoin,:) 
+     !         end do
+     !         write(550,"(A)") 'End Elements'
+     !        close(550)
+     !   write(550,"(A)") 'Result "Preassure" "Preassure" 0 Scalar OnNodes'
+     !   write(550,"(A)") 'ComponentNames "" '
+     !   write(550,"(A)") 'Values'
+     !   ! se escribe el res de la presion 
+     !   write(550,914)
+     !   do ipoin = 1, n_nodes
+     !     pnode_id = pnodes(ipoin,2)
+     !     write(550,916) ipoin, solution(prow+pnode_id, 1)  
+     !   end do
+     !   write(550,"(A)") 'End Values'
+     !   close(550)
+     ! else
+     !   continue
+     ! end if
+      
       900 format(A15, A13, A1, A13)
       902 format(A4,1x,A8,1X,A9,1X,I1,1X,A8,1X,A13,A6,1X,I1)
       906 format(I5,2(3x,f9.4)) !format for msh           
-      908 format(5(2x,I4) )
+      908 format(9(2x,I4) )
       910 format('#',3x,'No    ' 3x, ' Ux ', 8x, ' Uy')
       912 format(I5,2x,2f12.5) !format for res velocity
       914 format('#',3x,'No'     9x, 'P')
