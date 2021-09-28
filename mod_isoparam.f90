@@ -2,109 +2,132 @@ module Isoparametric
   use Parameters
  
   contains
-  
-    subroutine GetQuadGauss(fila, columna, gauss_points, gauss_weights)!, xi, eta)
+    
+    subroutine GaussQuadrature(gauss_points, gauss_weights)!, xi, eta)
       implicit none
-
-      integer               :: i,j,k
-      ! integer, intent(out)  :: totGp
-      integer, intent(in)   :: fila, columna
+       
       double precision, allocatable, dimension(:,:),intent(out) :: gauss_points, gauss_weights
-      double precision, allocatable, dimension(:,:) :: w1, w2, w, x
-      ! double precision, allocatable, dimension(:,:) :: xi, eta
+      real :: a,b, ex1,et1,ez1,ex2,et2,ez2
 
-      allocate(gauss_points(fila*columna,2))
-      allocate(gauss_weights(fila*columna,1))
-      allocate(w1(columna,1),w2(1,columna), x(columna,1))
-      allocate(w(columna,columna))
+      allocate(gauss_points(totGp,2))
+      allocate(gauss_weights(totGp,1))
+      
       ! allocate(xi(size(gauss_points,1),1),eta(size(gauss_points,1),1))
-
       ! totGp = size(gauss_points,1) ! y declarar totGp con SAVE para tener siempre el valor de la variable totGp 
       gauss_points = 0
       gauss_weights = 0
 
-      if ( fila == 1 .and. columna == 1 ) then
-        x = 0.0
-        w = 4.0
-        else if (fila == 2 .and. columna == 2 ) then
-          x = reshape([-1.0/sqrt(3.0), 1.0/sqrt(3.0) ], [columna,1])
-          w1 = reshape([1.0, 1.0],[columna,1])
-          w2 = reshape([1.0, 1.0],[1,columna])
-          w = matmul(w1,w2)
-        else if (fila == 3 .and. columna == 3 ) then
-          x = reshape([-sqrt(3.0/5), 0.0, sqrt(3.0/5)], [columna,1])
-          w1 = reshape([5.0/9, 8/9.0, 5.0/9],[columna,1])
-          w2 = reshape([5.0/9, 8/9.0, 5.0/9],[1,columna])
-          w = matmul(w1,w2)
-        else
-        print*, 'Error calling GetQuadGauss\n'
-      end if
-
-      !for-loop block: set up the 2-D Gauss points and weights
-      k=1
-      do i=1,fila
-        do j=1, columna
-          gauss_points(k,1:2)= [x(i,1), x(j,1)]
-          gauss_weights(k,1) = w(i,j)     !En fortran un vector debe especificarse
-          k=k+1                           !como un arreglo de rango 2 es decir (1,n) o (n,1)
-        end do                            !mientras que en matlab solo con escribir (n)
-      end do
-
-      ! xi  = gauss_points(:,1)
-      ! eta = gauss_points(:,2)
-      ! xi(:,1)  = gauss_points(:,1)     ! xi-coordinate of point j
-      ! eta(:,1) = gauss_points(:,2)
-
-      DEALLOCATE(w1, w2, x, w)
-      !Esta funcion no afecta al resultado pues se ha liberado la memoria para calcular pesos y puntos
-      !de Gauss mas no las variables que contienen pesos y puntos de gauus.
-    end subroutine GetQuadGauss
-
-    subroutine GetTriGauss(gauss_points, gauss_weights)
-
-      double precision, allocatable, dimension(:,:),intent(out):: gauss_points, gauss_weights
-
-      allocate(gauss_points(totGp,2))
-      allocate(gauss_weights(totGp,1))
-
-      gauss_points = 0
-      gauss_weights = 0
-      if (totGp .eq. 3) then
-        gauss_points(1,1) = 1.0/6.0
-        gauss_points(1,2) = 1.0/6.0
-        gauss_points(2,1) = 2.0/3.0
-        gauss_points(2,2) = 1.0/6.0
-        gauss_points(3,1) = 1.0/6.0
-        gauss_points(3,2) = 2.0/3.0
-        gauss_weights(1,1) = 1.0/3.0
-        gauss_weights(2,1) = 1.0/3.0
-        gauss_weights(3,1) = 1.0/3.0  
-      elseif (totGp .eq. 7) then
-        gauss_points(1,1) = 0.1012865073235
-        gauss_points(1,2) = gauss_points(1,1)
-        gauss_points(2,1) = 0.7974269853531
-        gauss_points(2,2) = gauss_points(1,1)
-        gauss_points(3,1) = gauss_points(1,1)
-        gauss_points(3,2) = gauss_points(2,1)
-        gauss_points(4,1) = 0.4701420641051
-        gauss_points(4,2) = gauss_points(6,1)
-        gauss_points(5,1) = gauss_points(4,1)
-        gauss_points(5,2) = gauss_points(1,1)
-        gauss_points(6,1) = 0.0597158717898
-        gauss_points(6,2) = gauss_points(4,1)
-        gauss_points(7,1) = 1.0/3.0
-        gauss_points(7,2) = gauss_points(7,1)
-
-        gauss_weights(1,1) = 0.1259391805448
-        gauss_weights(2,1) = 0.1259391805448
-        gauss_weights(3,1) = 0.1259391805448
-        gauss_weights(4,1) = 0.1323941527885
-        gauss_weights(5,1) = 0.1323941527885
-        gauss_weights(6,1) = 0.1323941527885
-        gauss_weights(7,1) = 0.225
-      endif
-        
-    end subroutine GetTriGauss
+      Select case(ElemType) 
+        case('Quadrilateral') !if(nnode.eq.4. or .nnode.eq.9) then
+          if(totGp.eq.1)then 
+            gauss_points(1,1) = 0.0
+            gauss_points(1,2) = 0.0
+            gauss_weights(1,1) = 2.0
+          else if(totGp.eq.4) then
+            gauss_points(1,1) = -sqrt(1.0/3.0)
+            gauss_points(2,1) = sqrt(1.0/3.0)
+            gauss_points(3,1) = -sqrt(1.0/3.0)
+            gauss_points(4,1) = sqrt(1.0/3.0)
+            gauss_points(1,2) = -sqrt(1.0/3.0)
+            gauss_points(2,2) = -sqrt(1.0/3.0)
+            gauss_points(3,2) = sqrt(1.0/3.0)
+            gauss_points(4,2) = sqrt(1.0/3.0)
+            gauss_weights(1,1)=1.0
+            gauss_weights(2,1)=1.0
+            gauss_weights(3,1)=1.0
+            gauss_weights(4,1)=1.0
+          else if(totGp.eq.9) then
+            gauss_points(1,1)=-sqrt(3.0/5.0)
+            gauss_points(2,1)= 0.0
+            gauss_points(3,1)= sqrt(3.0/5.0)
+            gauss_points(4,1)=-sqrt(3.0/5.0)
+            gauss_points(5,1)= 0.0
+            gauss_points(6,1)= sqrt(3.0/5.0)
+            gauss_points(7,1)=-sqrt(3.0/5.0)
+            gauss_points(8,1)= 0.0
+            gauss_points(9,1)= sqrt(3.0/5.0)
+            gauss_points(1,2)=-sqrt(3.0/5.0)
+            gauss_points(2,2)=-sqrt(3.0/5.0)
+            gauss_points(3,2)=-sqrt(3.0/5.0)
+            gauss_points(4,2)= 0.0
+            gauss_points(5,2)= 0.0
+            gauss_points(6,2)= 0.0
+            gauss_points(7,2)= sqrt(3.0/5.0)
+            gauss_points(8,2)= sqrt(3.0/5.0)
+            gauss_points(9,2)= sqrt(3.0/5.0)
+            gauss_weights(1,1)= 25.0/81.0
+            gauss_weights(2,1)= 40.0/81.0
+            gauss_weights(3,1)= 25.0/81.0
+            gauss_weights(4,1)= 40.0/81.0
+            gauss_weights(5,1)= 64.0/81.0
+            gauss_weights(6,1)= 40.0/81.0
+            gauss_weights(7,1)= 25.0/81.0
+            gauss_weights(8,1)= 40.0/81.0
+            gauss_weights(9,1)= 25.0/81.0
+          end if
+        case('Triangle') !else if(nnode.eq.3. or .nnode.eq.6) then
+          if(totGp.eq.1) then
+            gauss_points(1,1) = 1.0/3.0
+            gauss_points(1,2) = 1.0/3.0
+            gauss_weights(1,1) = 0.5
+          else if(totGp.eq.3) then
+            gauss_points(1,1) = 0.0
+            gauss_points(2,1) = 0.5
+            gauss_points(3,1) = 0.5
+            gauss_points(1,2) = 0.5
+            gauss_points(2,2) = 0.0
+            gauss_points(3,2) = 0.5
+            gauss_weights(1,1) =1.0/6.0
+            gauss_weights(2,1) =1.0/6.0
+            gauss_weights(3,1) =1.0/6.0
+          else if(totGp.eq.4) then
+            gauss_points(1,1) =  1.0/3.0
+            gauss_points(2,1) =  1.0/5.0
+            gauss_points(3,1) =  1.0/5.0
+            gauss_points(4,1) =  3.0/5.0
+            gauss_points(1,2) =  1.0/3.0
+            gauss_points(2,2) =  3.0/5.0
+            gauss_points(3,2) =  1.0/5.0
+            gauss_points(4,2) =  1.0/5.0
+            gauss_weights(1,1) = -27.0/96.0
+            gauss_weights(2,1) = 25.0/96.0
+            gauss_weights(3,1) = 25.0/96.0
+            gauss_weights(4,1) = 25.0/96.0
+          else if(totGp.eq.6) then
+            ex1 = 0.816847572980459 !0.81684 75729 80459 verificar si es un vector fila o un real de 18 digitos
+            et1 = 0.091576213509771
+            ez1 = 0.091576213509771
+            ex2 = 0.108103018168070
+            et2 = 0.445948490915965
+            ez2 = 0.445948490915965
+            gauss_points(1,1) = ex1
+            gauss_points(2,1) = et1
+            gauss_points(3,1) = ez1
+            gauss_points(4,1) = ex2
+            gauss_points(5,1) = et2
+            gauss_points(6,1) = ez2
+            gauss_points(1,2) = et1
+            gauss_points(2,2) = ez1
+            gauss_points(3,2) = ex1
+            gauss_points(4,2) = et2
+            gauss_points(5,2) = ez2
+            gauss_points(6,2) = ex2
+            a = 0.054975870996713638
+            b = 0.1116907969117165    
+            gauss_weights(1,1) = a
+            gauss_weights(2,1) = a
+            gauss_weights(3,1) = a
+            gauss_weights(4,1) = b
+            gauss_weights(5,1) = b
+            gauss_weights(6,1) = b
+          end if
+        case DEFAULT
+          write(*,*) 'Invalid type of element.'   
+      end select
+      
+      
+      
+    end subroutine GaussQuadrature
 
     subroutine ShapeFunctions(gauss_points, Nne,  N, dN_dxi, dN_deta )  
       implicit None
@@ -141,7 +164,7 @@ module Isoparametric
            !  | o- - o - -o
            !  |
            !  +--------X-------->
-            write(*,100) 'Element type: ', ElemType, 'whit', Nne, 'nodes per element'
+            write(*,100) ' Element type: ', ElemType, 'whit', Nne, 'nodes per element'
             !coordinates of the nodes of the master element
             master_nodes = reshape([1, -1, -1, 1, 0, -1, 0, 1, 1, 1, -1, -1, 1, 0, -1, 0], [Nne,DimPr])
             !NOTA ** Para que el reshape funcione correctamente, o que produzca el par de valores deseado, primero se deben
@@ -226,7 +249,7 @@ module Isoparametric
             !  |
             !  +--------X-------->
             
-            write(*,100) 'Element type: ', ElemType, 'whit', Nne, 'nodes per element'
+            write(*,100) ' Element type: ', ElemType, 'whit', Nne, 'nodes per element'
             !coordinates of the nodes of the master element
             master_nodes = reshape([1, -1, -1, 1, 1, 1, -1, -1], [Nne,DimPr])
 
@@ -255,7 +278,7 @@ module Isoparametric
               write(*,*) 'Using only shape functions'
               continue
             endif
-
+            
             do j=1,totGp                            ! columns for point 1,2 ...
               xi=xi_vector(j);                      ! xi-coordinate of point j 
               eta=eta_vector(j);                    ! eta-coordinate of point j 
@@ -265,21 +288,21 @@ module Isoparametric
                 N(i,j)=(1.0 + mn_xi*xi)*(1.0 + mn_eta*eta)/4.0        ! Ni(xi,eta)
               end do
             end do
-
+            
           case DEFAULT
             write(*,*) 'Invalid number of nodes in the element.'
           end select
-
+          
         CASE ('Triangle')
-			    !  |
-			    !  |        o
-			    !  |       / \
-			    !  |      /   \
-			    !  Y     /     \
-			    !  |    /       \
-			    !  |   o---------o
-			    !  |
-			    !  +--------X-------->
+          !  |
+          !  |        o
+          !  |       / \
+          !  |      /   \
+          !  Y     /     \
+          !  |    /       \
+          !  |   o---------o
+          !  |
+          !  +--------X-------->
 
           if (present(dN_dxi) .and. present(dN_deta))then
             write(*,*) 'Using derivatives of shape functions', Nne
@@ -677,7 +700,7 @@ module Isoparametric
            !  |
            !  +- - - x - - ->
 
-            write(*,100) 'Element type: ', ElemType, 'whit', nne, 'nodes per element'
+            write(*,100) ' Element type: ', ElemType, 'whit', nne, 'nodes per element'
             !do loop: compute N, dN_dxi, dN_deta
             if (present(dN_dxi) .and. present(dN_deta))then
               write(*,*) 'Escribo solo derivadas de funciones base de 4 nodos'
