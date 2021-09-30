@@ -12,15 +12,15 @@ module library
       print*, ' '
       print*,'!==================== GENERAL INFO ===============!'
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='
-      write(*,"(A30,8X,I4,1X,A11)") '1.- Dimension of the problem:    ', DimPr, '  |'
-      write(*,"(A31,8X,A13,1X,A1)") '2.- Element type:                ', ElemType,'|'
-      write(*,"(A30,8X,I4,1X,A11)") '3.- Total number of elements:    ', Nelem,'   |'
-      write(*,"(A30,8X,I4,1X,A11)") '4.- Total velocity nodes:        ', n_nodes, '|'
-      write(*,"(A30,8X,I4,1X,A11)") '5.- Total preasure nodes:        ', n_pnodes, '|'
-      write(*,"(A30,8X,I4,1X,A11)") '6.- DoF per element:             ', Dof, '    |'
-      write(*,"(A30,8X,I4,1X,A11)") '7.- Velocity nodes per element:  ', nUne, '   |'
-      write(*,"(A30,8X,I4,1X,A11)") '8.- Preasure nodes per element:  ', nPne, '   |'
-      write(*,"(A30,8X,I4,1X,A11)") '9.- Total of Gauss points:       ', totGp,'   |'
+      write(*,"(A30,8X,I4,1X,A11)") ' 1.- Dimension of the problem:    ', DimPr, '  |'
+      write(*,"(A31,8X,A13,1X,A1)") ' 2.- Element type:                ', ElemType,'|'
+      write(*,"(A30,8X,I4,1X,A11)") ' 3.- Total number of elements:    ', Nelem,'   |'
+      write(*,"(A30,8X,I4,1X,A11)") ' 4.- Total velocity nodes:        ', n_nodes, '|'
+      write(*,"(A30,8X,I4,1X,A11)") ' 5.- Total preasure nodes:        ', n_pnodes,'|'
+      write(*,"(A30,8X,I4,1X,A11)") ' 6.- DoF per element:             ', Dof, '    |'
+      write(*,"(A30,8X,I4,1X,A11)") ' 7.- Velocity nodes per element:  ', nUne, '   |'
+      write(*,"(A30,8X,I4,1X,A11)") ' 8.- Preasure nodes per element:  ', nPne, '   |'
+      write(*,"(A30,8X,I4,1X,A11)") ' 9.- Total of Gauss points:       ', totGp,'   |'
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='    
       write(*,*)' '
       print*,'!============== FILE READING STATUS ============!'
@@ -316,7 +316,7 @@ module library
 
     end function compBmat
 
-    function Bpmat(dNp_dxi, dNp_deta, Gp)                                               
+    function BPmat(dNp_dxi, dNp_deta, Gp)                                               
       !Computation of the preassure Strain-Displacement Matrix
     
       implicit none                                                                                      
@@ -341,7 +341,7 @@ module library
     
       return                                                    
     
-    end function Bpmat  
+    end function BPmat  
 
     subroutine AssembleK(K, ke, node_id_map, ndDOF)
 
@@ -809,21 +809,21 @@ module library
       
       implicit none
       
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Pos/"
       real*8, dimension(2*n_nodes+n_pnodes, 1), intent(in) :: solution
       character(*), intent(in)                             :: nameFile1, activity
       double precision, dimension(1, 2*n_nodes+n_pnodes)   :: solution_T
       double precision, dimension(1,n_nodes) :: xcor, ycor
       integer      :: ipoin,  prow, pnode_id!, xypnode, e
-      integer, dimension(1, Nelem) :: conectivity1, conectivity2, conectivity3, conectivity4
+      !integer, dimension(1, Nelem) :: conectivity1, conectivity2, conectivity3, conectivity4
       
       solution_T = transpose(solution)
       xcor  = spread(nodes(:,2),dim = 1, ncopies= 1)
       ycor  = spread(nodes(:,3),dim = 1, ncopies= 1)
-      conectivity1 = spread(elements(:,2),dim = 1, ncopies= 1)
-      conectivity2 = spread(elements(:,3),dim = 1, ncopies= 1)
-      conectivity3 = spread(elements(:,4),dim = 1, ncopies= 1)
-      conectivity4 = spread(elements(:,5),dim = 1, ncopies= 1)
+      !conectivity1 = spread(elements(:,2),dim = 1, ncopies= 1)
+      !conectivity2 = spread(elements(:,3),dim = 1, ncopies= 1)
+      !conectivity3 = spread(elements(:,4),dim = 1, ncopies= 1)
+      !conectivity4 = spread(elements(:,5),dim = 1, ncopies= 1)
       
       prow=2*n_nodes
       
@@ -875,7 +875,6 @@ module library
         end do
         write(555,"(A)") 'End Values'
         close(555)
-       
       else
         write(*,"(A)") ' "Activity" must be "msh" or "res" '
         close(555)
