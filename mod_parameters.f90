@@ -2,16 +2,15 @@ module Parameters
   
   implicit none
   
-  character(len=14), parameter  :: ElemType = 'Quadrilateral'!,'Triangle'
+  character(len=14), parameter  :: ElemType = 'Triangle'!,'Triangle'
   integer, parameter :: DimPr     = 2     !Dimension del problema 
-  integer, parameter :: Nelem     = 100   !Number of elements
+  integer, parameter :: Nelem     = 200   !Number of elements
   integer, parameter :: n_nodes   = 121   !Total number of velocity nodes
   integer, parameter :: n_pnodes  = 121   !Total number of preasure nodes MAXVAL(pnodes,2)
-  integer, parameter :: nUne      = 4     !Number of velocity nodes in the element
-  integer, parameter :: nPne      = 4     !Number of preasure nodes in the element
+  integer, parameter :: nUne      = 3     !Number of velocity nodes in the element
+  integer, parameter :: nPne      = 3     !Number of preasure nodes in the element
   integer, parameter :: Dof       = 3     !Degrees of fredoom: 2 for velocity + 1 one for preasure
-  integer, parameter :: ngp       = 3     !Number of Gauss points for quadrature  
-  integer, parameter :: totGp     = ngp*ngp
+  integer, parameter :: totGp     = 4     ! 1,4,9 for Q, 1,3,4,6 for P 
 
   double precision, allocatable, dimension(:,:) :: gauss_points, gauss_weights !Verificar si debe ser global---> Si, se usa en la funcion ComputeK
   integer, dimension(Nelem, nUne + 1)    :: elements
