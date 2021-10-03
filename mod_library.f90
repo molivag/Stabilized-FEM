@@ -12,15 +12,15 @@ module library
       print*, ' '
       print*,'!==================== GENERAL INFO ===============!'
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='
-      write(*,"(A30,8X,I4,1X,A11)") ' 1.- Dimension of the problem:    ', DimPr, '  |'
-      write(*,"(A31,8X,A13,1X,A1)") ' 2.- Element type:                ', ElemType,'|'
-      write(*,"(A30,8X,I4,1X,A11)") ' 3.- Total number of elements:    ', Nelem,'   |'
-      write(*,"(A30,8X,I4,1X,A11)") ' 4.- Total velocity nodes:        ', n_nodes, '|'
-      write(*,"(A30,8X,I4,1X,A11)") ' 5.- Total preasure nodes:        ', n_pnodes,'|'
-      write(*,"(A30,8X,I4,1X,A11)") ' 6.- DoF per element:             ', Dof, '    |'
-      write(*,"(A30,8X,I4,1X,A11)") ' 7.- Velocity nodes per element:  ', nUne, '   |'
-      write(*,"(A30,8X,I4,1X,A11)") ' 8.- Preasure nodes per element:  ', nPne, '   |'
-      write(*,"(A30,8X,I4,1X,A11)") ' 9.- Total of Gauss points:       ', totGp,'   |'
+      write(*,"(A30,8X,I6,1X,A11)") ' 1.- Dimension of the problem:    ', DimPr, '  |'
+      write(*,"(A31,8X,A13,3X,A1)") ' 2.- Element type:                ', ElemType,'|'
+      write(*,"(A30,8X,I6,1X,A11)") ' 3.- Total number of elements:    ', Nelem,'   |'
+      write(*,"(A30,8X,I6,1X,A11)") ' 4.- Total velocity nodes:        ', n_nodes, '|'
+      write(*,"(A30,8X,I6,1X,A11)") ' 5.- Total preasure nodes:        ', n_pnodes,'|'
+      write(*,"(A30,8X,I6,1X,A11)") ' 6.- DoF per element:             ', Dof, '    |'
+      write(*,"(A30,8X,I6,1X,A11)") ' 7.- Velocity nodes per element:  ', nUne, '   |'
+      write(*,"(A30,8X,I6,1X,A11)") ' 8.- Preasure nodes per element:  ', nPne, '   |'
+      write(*,"(A30,8X,I6,1X,A11)") ' 9.- Total of Gauss points:       ', totGp,'   |'
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='    
       write(*,*)' '
       print*,'!============== FILE READING STATUS ============!'
@@ -34,8 +34,8 @@ module library
       character (len=*), intent (in) :: FileName
       character(len=:), allocatable :: fileplace
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
-
-      fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+                  ! /home/maoliva/Codes/StokesFlow_Aca/Geo 
+      fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       
       open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
       
@@ -51,7 +51,7 @@ module library
 
       integer :: i, j, status
       integer, intent(in)            :: UnitNum, NumRows, NumCols
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/"!"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       integer, dimension (1:NumRows, 1:NumCols), intent (out) :: IntegerArray
 
@@ -69,7 +69,7 @@ module library
     subroutine ReadReal(UnitNum, FileName, value)
 
       integer :: status, UnitNum
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       real :: value
 
@@ -93,7 +93,7 @@ module library
       !- - - - - - - - - - * * * * * * * * * * - - - - - - - - - -
 
       integer :: i, j, status, UnitNum, NumRows, NumCols
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/"!"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
 
@@ -495,6 +495,12 @@ module library
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
       tau_stab =  4* (0.1**2 /materials) !tau stabilization puedo pedir por teclado a h
+      if(nUne .EQ. nPne)then
+        print"(A25,f12.5)",'Stabilization parameter: ', tau_stab
+      else
+        continue
+      endif
+
       !for-loop: compute K12 block of K
       do e = 1, Nelem
         kep = 0.0
@@ -536,7 +542,12 @@ module library
         end do 
         
         ! for-loop: assemble stab into global K22
-        call AssemblyStab(Stab, pnode_id_map, 1, K22) ! assemble global K
+        if(nUne .EQ. nPne)then
+         call AssemblyStab(Stab, pnode_id_map, 1, K22) ! assemble global K
+        else
+         continue
+        end if
+
         
         !Desde aqui
           ! print*, 'element number', e
@@ -602,13 +613,18 @@ module library
         end do
       end do
       !========== Filling the stabilization global matrix into A_K ==========
-      RowStab = dimAK - n_pnodes 
-      ColStab = dimAK - n_pnodes 
-      do i = RowStab, 2*n_nodes+n_pnodes -1
-        do j = ColStab, 2*n_nodes+n_pnodes-1
-          A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
+      
+      if(nUne .EQ. nPne)then
+        RowStab = dimAK - n_pnodes 
+        ColStab = dimAK - n_pnodes 
+        do i = RowStab, 2*n_nodes+n_pnodes -1
+          do j = ColStab, 2*n_nodes+n_pnodes-1
+            A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
+          end do
         end do
-      end do
+      else
+        continue
+      end if
       
       !      do i = RowStab, 2*n_nodes+n_pnodes
       !        do j = ColStab, 2*n_nodes+n_pnodes
@@ -644,7 +660,7 @@ module library
       !=========================================================================
       implicit none
       
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       integer, intent(out) :: NoBV, NoBVcol
       integer :: ierror, a ,b, c, i
       real    :: x, y
@@ -668,17 +684,17 @@ module library
         x=nodes(i,2)
         y=nodes(i,3)
         if(y.eq.1.0) then
-          write(100,50) real(i), 1.0, 1.0
-          write(100,50) real(i), 2.0, 0.0
+          write(100,50) i, 1, 1
+          write(100,50) i, 2, 0
           a=a+2
           if(x.eq.0.5)then
-            write(100,50) real(i),3.0,0.0
+            write(100,50) i,3,0
             b=b+1
           end if
           
         else if (x.eq.0.0 .or. y.eq.0.0 .or. x.eq.1.0)then
-          write(100,50) real(i), 1.0, 0.0
-          write(100,50) real(i), 2.0, 0.0
+          write(100,50) i, 1, 0
+          write(100,50) i, 2, 0
           c=c+2
         end if
         NoBV = a+b+c
@@ -686,7 +702,8 @@ module library
       
       close(100)
       
-      50 format(3F15.10)
+      !50 format(3F20.10)
+      50 format(3I6)
       
       
     end subroutine SetBounCond  
@@ -698,7 +715,7 @@ module library
       ! - - - - - - - - - - * * * * * * * * * * - - - - - - - - - -
       implicit none
                           !Dof
-      real, dimension(NoBV,Dof), intent(in) :: Fbcsvp
+      integer , dimension(NoBV,Dof), intent(in) :: Fbcsvp
       double precision, dimension(2*n_nodes+n_pnodes, 2*n_nodes+n_pnodes),intent(in out) :: A_K  !Global Stiffnes matrix
       double precision, dimension(2*n_nodes+n_pnodes, 1), intent(in out) :: Sv
       double precision :: param, coeff
@@ -715,14 +732,25 @@ module library
       preasure_row = 2*n_nodes
 
       do i =1, NoBV
-        node_id   = int(Fbcsvp(i,1)) !se pone este int() pq la 1a y 2a col de Fbcsvp esta leida como integer pero 
-        component = int(Fbcsvp(i,2))!la matriz completa esta declarada como real en esta subroutina y en el main.
+        !print*, 'iteration', i
+        node_id   = Fbcsvp(i,1) !se pone este int() pq la 1a y 2a col de Fbcsvp esta leida como integer pero 
+        !print*, 'node_id', node_id
+        component = Fbcsvp(i,2)!la matriz completa esta declarada como real en esta subroutina y en el main.
+        !print*, 'component', component
+        !print*, shape(Fbcsvp)
+        !print*, Fbcsvp(i,:)
         if ( component .le. 2 ) then
+          !print*, 'component of Boundary value', component
+          !print*,'La pausa', 2*node_id-2+component,' ', 2*node_id-2 +component
+          !read(*,*)
           A_K(2*node_id-2+component, 2*node_id-2 +component) = coeff
           Sv( 2*node_id-2+component, 1) = Fbcsvp(i,3)*coeff 
         else                                                     
           pnode_id = pnodes(node_id,2)
+          !print*, 'pnode_id', pnode_id 
+          !print*, 'preasure_row', preasure_row
           A_K(preasure_row+pnode_id, preasure_row + pnode_id) = coeff
+          !print*, preasure_row+pnode_id, preasure_row + pnode_id
           Sv(preasure_row+pnode_id,1) = Fbcsvp(i,3)*coeff !el tres es por que en la columna 3 esta el valor de la condicon de forntera
         end if
       end do
@@ -780,7 +808,7 @@ module library
     
     subroutine writeMatrix(Matrix, unit1, name1, Vector, unit2, name2)
       implicit none
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
+      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Res/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
       character(*) :: name1, name2
       integer :: i, j, mrow, ncol, unit1, unit2
       double precision, dimension(2*n_nodes+n_pnodes ,2*n_nodes+n_pnodes ), intent(in) :: Matrix
@@ -809,7 +837,7 @@ module library
       
       implicit none
       
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Pos/"
+      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Pos/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Pos/"
       real*8, dimension(2*n_nodes+n_pnodes, 1), intent(in) :: solution
       character(*), intent(in)                             :: nameFile1, activity
       double precision, dimension(1, 2*n_nodes+n_pnodes)   :: solution_T
@@ -919,12 +947,12 @@ module library
       
       900 format(A15, A13, A1, A13)
       902 format(A4,1x,A8,1X,A9,1X,I1,1X,A8,1X,A13,A6,1X,I1)
-      906 format(I5,2(3x,f9.4)) !format for msh           
-      908 format(9(2x,I4) )
+      906 format(I7,2(3x,f9.4)) !format for msh           
+      908 format(9(2x,I7) )
       910 format('#',3x,'No    ' 3x, ' Ux ', 8x, ' Uy')
-      912 format(I5,2x,2f12.5) !format for res velocity
+      912 format(I7,2x,2f12.5) !format for res velocity
       914 format('#',3x,'No'     9x, 'P')
-      916 format(I4,2x,f12.5)  !format for res preassure
+      916 format(I7,2x,f12.5)  !format for res preassure
       
     end subroutine PosProcess
     
