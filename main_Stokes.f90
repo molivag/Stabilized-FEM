@@ -6,22 +6,24 @@ program main_Stokes
   implicit none
   ! - - - - - - - - - - * * * Variables que se usan aqui en main * * * * * * * - - - - - - - - - -
   real(8), allocatable, dimension(:,:) :: A_K, Sv, AK_LU, Solution, N, dN_dxi, dN_deta
-  real(4), allocatable, dimension(:,:) :: Fbcsvp
-  integer                              :: NoBV, NoBVcol
-  !character(len=20)                    :: FileName
+  integer, allocatable, dimension(:,:) :: Fbcsvp
+  integer                           :: NoBV, NoBVcol
+  real                                 :: start, finish
  !=============== S O L V E R ===============              
   external                             :: mkl_dgetrfnp, dgetrf, dgetrs
   integer                              :: S_m, S_n, S_lda, S_ldb, S_infoLU, S_nrhs , S_infoSOL
   integer, allocatable, dimension(:)   :: S_ipiv
   character(len=1)                     :: S_trans
   ! - - - - - - - - - - - - - - - * * * Fin * * * * * * * - - - - - - - - - - - - - - - - 
+  call cpu_time(start)
+
   
-  call GeneralInfo( )
-  call ReadIntegerFile(10,"elementsP1P1.dat", Nelem, nUne + 1, elements)  
-  call ReadRealFile(20,"nodesP1P1.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option para 
+  call GeneralInfo( )        ! elementsQ2-Q1
+  call ReadIntegerFile(10,"elementsQ2-Q1.dat", Nelem, nUne + 1, elements)  
+  call ReadRealFile(20,"nodesQ2-Q1.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option par
   call ReadReal(30,"materials.dat", materials)    !Para dreducir el numero de subrutinas, usar la sentencia option para      
-  call ReadIntegerFile(40,"pnodesP1P1.dat", n_nodes,2, pnodes)
-  call ReadIntegerFile(50,"elementsP1P1.dat", Nelem,nPne + 1, pelements)
+  call ReadIntegerFile(40,"pnodesQ2-Q1.dat", n_nodes,2, pnodes)
+  call ReadIntegerFile(50,"pelementsQ2-Q1.dat", Nelem,nPne + 1, pelements)
   print*, ' '
   print*, '!=============== INFO DURING EXECUTION ===============!'
   
@@ -31,7 +33,7 @@ program main_Stokes
   allocate(A_K(2*n_nodes+n_pnodes, 2*n_nodes+n_pnodes), AK_LU(2*n_nodes+n_pnodes, 2*n_nodes+n_pnodes) )
   call SetBounCond( NoBV, NoBVcol) !Esta funcion crea el archivo bcsVP.dat
   allocate( Fbcsvp(NoBV, NoBVcol) ) !Designo la memoria para la matriz de nodos con valor en la frontera
-  call ReadMixFile(60,"Fbcsvp.dat", NoBV, NoBVcol, Fbcsvp)!Llamo el archivo de valores en la frontera y lo guardo en Fbcsvp
+  call ReadIntegerFile(60,"Fbcsvp.dat", NoBV, NoBVcol, Fbcsvp)!Llamo el archivo de valores en la frontera y lo guardo en Fbcsvp
   
   call GlobalK( A_K, dN_dxi, dN_deta)
 
@@ -60,24 +62,25 @@ program main_Stokes
   S_nrhs  = 1
   S_ldb   = max(1,size(Solution,1))
  
-  print*,'  •INITIALIZING LU FACTORIZATION A = P*L*U'
+  print*,'  •INITIALIZING LU FACTORIZATION A = P*L*U.....'
   call dgetrf( S_m, S_n, AK_LU, S_lda, S_ipiv, S_infoLU )
   call MKLfactoResult( S_infoLU )
 
   print*, ' '  
-  print*,'  •SOLVING SYSTEM OF EQUATIONS '
+  print*,'  •SOLVING SYSTEM OF EQUATIONS..... '
   call dgetrs( S_trans, S_n, S_nrhs, AK_LU, S_lda, S_ipiv, Solution, S_ldb, S_infoSOL )
   call MKLsolverResult( S_infoSOL )
   
+  print*, 'Writing postprocesses files.....'
   DEALLOCATE( S_ipiv)
   
-  call writeMatrix(A_K, 111, 'GlobalK_Triangle.dat', Solution, 444, 'P1P1Sol.dat')
+  call writeMatrix(A_K, 111, 'AcuarioQ2-Q1_GlobalK.dat', Solution, 444, 'AcuarioQ2-Q1_Sol.dat')
   !write(*,"(A)") 'Name for mesh file...'
   !read(*,"(A)") FileName 
-  call PosProcess(Solution, 'StokesP1P1.post.msh', 'msh')
+  call PosProcess(Solution, 'Stokes-AcuarioQ2-Q1.post.msh', 'msh')
   !write(*,"(A)") 'Name for results file...'
   !read(*,"(A)") FileName 
-  call PosProcess(Solution, 'StokesP1P1.post.res', 'res')
+  call PosProcess(Solution, 'Stokes-AcuarioQ2-Q1.post.res', 'res')
 
   DEALLOCATE( A_K)
   DEALLOCATE( AK_LU)
@@ -87,5 +90,9 @@ program main_Stokes
   print*, 'Files .post written succesfully on Pos/ . . . . .'
   print*, 'Files .dat written succesfully on Res/ . . . . .'
   print*, ' ' 
+
+  call cpu_time(finish)
+  print '(A11,f9.2,A8)',' CPU-Time =', finish-start, ' Seconds'
+  print"(A)", ' ' 
 
 end program main_Stokes
