@@ -35,7 +35,7 @@ module library
       character(len=:), allocatable :: fileplace
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
                   ! /home/maoliva/Codes/StokesFlow_Aca/Geo 
-      fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       
       open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
       
@@ -51,7 +51,7 @@ module library
 
       integer :: i, j, status
       integer, intent(in)            :: UnitNum, NumRows, NumCols
-      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/"!"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       integer, dimension (1:NumRows, 1:NumCols), intent (out) :: IntegerArray
 
@@ -69,7 +69,7 @@ module library
     subroutine ReadReal(UnitNum, FileName, value)
 
       integer :: status, UnitNum
-      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       real :: value
 
@@ -93,7 +93,7 @@ module library
       !- - - - - - - - - - * * * * * * * * * * - - - - - - - - - -
 
       integer :: i, j, status, UnitNum, NumRows, NumCols
-      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/"!"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
 
@@ -494,9 +494,9 @@ module library
       
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
-      tau_stab =  4* (0.1**2 /materials) !tau stabilization puedo pedir por teclado a h
+      tau_stab =  4.0 * (0.1**2 / materials) !tau stabilization puedo pedir por teclado a h
       if(nUne .EQ. nPne)then
-        print"(A25,f12.5)",'Stabilization parameter: ', tau_stab
+        print"(A26,f12.5)",' Stabilization parameter: ', tau_stab
       else
         continue
       endif
@@ -659,11 +659,11 @@ module library
       !La tercera columna asigna el valor correspondiente de la condicion de forntera
       !=========================================================================
       implicit none
-      
-      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Geo/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+                                                     !"/home/maoliva/Codes/StokesFlow_Aca/Geo/"
+      character(len=*), parameter :: fileplace ="~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       integer, intent(out) :: NoBV, NoBVcol
       integer :: ierror, a ,b, c, i
-      real    :: x, y
+      real    :: x, y, xmin, xmax, ymin, ymax, xhalf
       
       ! call ReadRealFile(10,"nodes.dat", 341,3, nodes)
       ! inicializamos los contadores
@@ -677,22 +677,38 @@ module library
       b = 0
       c = 0 
       
+      xmin = minval(nodes(:,2)) !the smallest number in y column
+      xmax = maxval(nodes(:,2)) !the smallest number in y column
+      ymin = minval(nodes(:,3)) !the smallest number in y column
+      ymax = maxval(nodes(:,3)) !the smallest number in y column
+      xhalf = xmax/2.0
+
+
+      print*, ' '
+      print*, 'xmin= ', xmin
+      print*, 'xmax= ', xmax
+      print*, 'ymin= ', ymin
+      print*, 'ymax= ', ymax
+      print*, 'xhalf= ', xhalf
+      print*, ' '
+
+
       open(unit=100, file=fileplace//'Fbcsvp.dat',Status= 'replace', action= 'write',iostat=ierror)
       NoBVcol = size(nodes,2)     
      
       do i =1, n_nodes
         x=nodes(i,2)
         y=nodes(i,3)
-        if(y.eq.1.0) then
+        if(y.eq.ymax) then
           write(100,50) i, 1, 1
           write(100,50) i, 2, 0
           a=a+2
-          if(x.eq.0.5)then
+          if(x.eq.xhalf)then
             write(100,50) i,3,0
             b=b+1
           end if
           
-        else if (x.eq.0.0 .or. y.eq.0.0 .or. x.eq.1.0)then
+        else if (x.eq.xmin .or. y.eq.ymin .or. x.eq.xmax)then
           write(100,50) i, 1, 0
           write(100,50) i, 2, 0
           c=c+2
@@ -808,7 +824,8 @@ module library
     
     subroutine writeMatrix(Matrix, unit1, name1, Vector, unit2, name2)
       implicit none
-      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Res/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
+                                                    !"/home/maoliva/Codes/StokesFlow_Aca/Res/" 
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
       character(*) :: name1, name2
       integer :: i, j, mrow, ncol, unit1, unit2
       double precision, dimension(2*n_nodes+n_pnodes ,2*n_nodes+n_pnodes ), intent(in) :: Matrix
@@ -833,33 +850,24 @@ module library
     
     end subroutine writeMatrix
     
-    subroutine PosProcess(solution, nameFile1, activity)!, nameFile2)
+    subroutine PosProcess(solution, nameFile1, activity)
       
       implicit none
-      
-      character(len=*), parameter    :: fileplace = "/home/maoliva/Codes/StokesFlow_Aca/Pos/" !"~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Pos/"
+                                                      !"/home/maoliva/Codes/StokesFlow_Aca/Pos/"  
+      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Pos/"
       real*8, dimension(2*n_nodes+n_pnodes, 1), intent(in) :: solution
       character(*), intent(in)                             :: nameFile1, activity
       double precision, dimension(1, 2*n_nodes+n_pnodes)   :: solution_T
       double precision, dimension(1,n_nodes) :: xcor, ycor
-      integer      :: ipoin,  prow, pnode_id!, xypnode, e
-      !integer, dimension(1, Nelem) :: conectivity1, conectivity2, conectivity3, conectivity4
+      integer      :: ipoin,  prow, pnode_id
       
       solution_T = transpose(solution)
       xcor  = spread(nodes(:,2),dim = 1, ncopies= 1)
       ycor  = spread(nodes(:,3),dim = 1, ncopies= 1)
-      !conectivity1 = spread(elements(:,2),dim = 1, ncopies= 1)
-      !conectivity2 = spread(elements(:,3),dim = 1, ncopies= 1)
-      !conectivity3 = spread(elements(:,4),dim = 1, ncopies= 1)
-      !conectivity4 = spread(elements(:,5),dim = 1, ncopies= 1)
       
       prow=2*n_nodes
       
       open(unit=555, file= fileplace//nameFile1, ACTION="write", STATUS="replace")
-      !open(unit=550, file= fileplace//nameFile2, ACTION="write", STATUS="replace")
-      !write(555,*) ' '
-      !write(555,*) ' '
-      !write(555,*) ' '
       
       if(activity == "msh")then !quitar este if y acomodar el numero de unidad
         
@@ -883,7 +891,7 @@ module library
         write(555,"(A)") 'GiD Post Results File 1.0'
         write(555,"(A)") '#2D Cavity Driven Flow Results' 
         write(555,900) '#Element tipe: ', ElemType,'/',ElemType 
-        write(555,"(A)") 'Result "{Velocity Components}" "Velocity" 0 Vector OnNodes'
+        write(555,"(A)") 'Result "Velocity Components" "Velocity" 0 Vector OnNodes'
         write(555,"(A)") 'ComponentNames "U_X" "U_Y" "U_Z" "" '
         write(555,"(A)") 'Values'
         ! se escribe el res de las componentes de la velocidad
@@ -892,7 +900,7 @@ module library
           write(555,912) ipoin, solution_T(1, 2*ipoin-1), solution_T(1,2*ipoin)
         end do
         write(555,"(A)") 'End Values'
-        write(555,"(A)") 'Result "Preassure" "Preassure" 0 Scalar OnNodes'
+        write(555,"(A)") 'Result "Pressure" "Pressure" 0 Scalar OnNodes'
         write(555,"(A)") 'ComponentNames "" '
         write(555,"(A)") 'Values'
         ! se escribe el res de la presion 
