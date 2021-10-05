@@ -7,7 +7,7 @@ program main_Stokes
   ! - - - - - - - - - - * * * Variables que se usan aqui en main * * * * * * * - - - - - - - - - -
   real(8), allocatable, dimension(:,:) :: A_K, Sv, AK_LU, Solution, N, dN_dxi, dN_deta
   integer, allocatable, dimension(:,:) :: Fbcsvp
-  integer                           :: NoBV, NoBVcol
+  integer                              :: NoBV, NoBVcol
   real                                 :: start, finish
  !=============== S O L V E R ===============              
   external                             :: mkl_dgetrfnp, dgetrf, dgetrs
@@ -19,11 +19,11 @@ program main_Stokes
 
   
   call GeneralInfo( )        ! elementsQ2-Q1
-  call ReadIntegerFile(10,"elementsQ2-Q1.dat", Nelem, nUne + 1, elements)  
-  call ReadRealFile(20,"nodesQ2-Q1.dat", n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option par
-  call ReadReal(30,"materials.dat", materials)    !Para dreducir el numero de subrutinas, usar la sentencia option para      
-  call ReadIntegerFile(40,"pnodesQ2-Q1.dat", n_nodes,2, pnodes)
-  call ReadIntegerFile(50,"pelementsQ2-Q1.dat", Nelem,nPne + 1, pelements)
+  call ReadIntegerFile(10,File_element, Nelem, nUne + 1, elements)  
+  call ReadRealFile(20,File_nodes, n_nodes,3, nodes) !Para dreducir el numero de subrutinas, usar la sentencia option par
+  call ReadReal(30,File_material, materials)    !Para dreducir el numero de subrutinas, usar la sentencia option para      
+  call ReadIntegerFile(40,File_pnodes, n_nodes,2, pnodes)
+  call ReadIntegerFile(50,File_pelement, Nelem,nPne + 1, pelements)
   print*, ' '
   print*, '!=============== INFO DURING EXECUTION ===============!'
   
@@ -74,21 +74,21 @@ program main_Stokes
   print*, 'Writing postprocesses files.....'
   DEALLOCATE( S_ipiv)
   
-  call writeMatrix(A_K, 111, 'AcuarioQ2-Q1_GlobalK.dat', Solution, 444, 'AcuarioQ2-Q1_Sol.dat')
+  !call writeMatrix(A_K, 111, 'GID_GlobalK.dat', Solution, 444, 'GID_Sol.dat')
   !write(*,"(A)") 'Name for mesh file...'
   !read(*,"(A)") FileName 
-  call PosProcess(Solution, 'Stokes-AcuarioQ2-Q1.post.msh', 'msh')
+  call PosProcess(Solution, File_PostMsh, 'msh')
   !write(*,"(A)") 'Name for results file...'
   !read(*,"(A)") FileName 
-  call PosProcess(Solution, 'Stokes-AcuarioQ2-Q1.post.res', 'res')
+  call PosProcess(Solution, File_PostRes, 'res')
 
-  DEALLOCATE( A_K)
+  DEALLOCATE( A_K)        
   DEALLOCATE( AK_LU)
   DEALLOCATE( Solution)
   print*,' '  
   
-  print*, 'Files .post written succesfully on Pos/ . . . . .'
-  print*, 'Files .dat written succesfully on Res/ . . . . .'
+  print"(A6,A19, A38)", ' File ',File_PostMsh,' written succesfully in Pos/ . . . . .'
+  print"(A6,A19, A38)", ' File ',File_PostRes, 'written succesfully in Pos/ . . . . .'
   print*, ' ' 
 
   call cpu_time(finish)
