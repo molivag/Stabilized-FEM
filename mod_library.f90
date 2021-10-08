@@ -4,9 +4,8 @@ module library
   
   
   contains
-
+   
     subroutine GeneralInfo( ) 
-    
       print*, ' '
       print*, '- - - - 2D Cavity Driven Flow Simulation - - - - '
       print*, ' '
@@ -24,7 +23,7 @@ module library
       ! write(*,*)'= = = = = = = = = = = = = = = = = = = = = ='    
       write(*,*)' '
       print*,'!============== FILE READING STATUS ============!'
-
+     
     endsubroutine GeneralInfo
 
     subroutine ReadRealFile(UnitNum, FileName, NumRows, NumCols, Real_Array)
@@ -494,7 +493,7 @@ module library
       
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
-      tau_stab =  4.0 * (0.1**2 / materials) !tau stabilization puedo pedir por teclado a h
+      tau_stab =  4.0 * (0.17**2 / materials) !tau stabilization puedo pedir por teclado a h
       if(nUne .EQ. nPne)then
         print"(A26,f12.5)",' Stabilization parameter: ', tau_stab
       else
@@ -699,18 +698,18 @@ module library
       do i =1, n_nodes
         x=nodes(i,2)
         y=nodes(i,3)
-        if(y.eq.ymax) then
-          write(100,50) i, 1, 1
-          write(100,50) i, 2, 0
+        if(y.eq.ymax) then !top edge: velocity boundary condition
+          write(100,50) i, 1, real(1)
+          write(100,50) i, 2, real(0)
           a=a+2
-          if(x.eq.xhalf)then
-            write(100,50) i,3,0
+          if(x.eq.xhalf)then !center zero pressure
+            write(100,50) i,3, real(0)
             b=b+1
           end if
           
-        else if (x.eq.xmin .or. y.eq.ymin .or. x.eq.xmax)then
-          write(100,50) i, 1, 0
-          write(100,50) i, 2, 0
+        else if (x.eq.xmin .or. y.eq.ymin .or. x.eq.xmax)then !The other 3 edges
+          write(100,50) i, 1, real(0) !x-velocity
+          write(100,50) i, 2, real(0) !y-velocity
           c=c+2
         end if
         NoBV = a+b+c
@@ -719,7 +718,7 @@ module library
       close(100)
       
       !50 format(3F20.10)
-      50 format(3I6)
+      50 format(2I6,f10.3)
       
       
     end subroutine SetBounCond  
