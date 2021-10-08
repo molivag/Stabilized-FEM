@@ -40,79 +40,93 @@ module library
       
       ! read in values
       read(UnitNum,*) ((Real_Array(i,j), j=1,NumCols), i=1,NumRows)
-      print *, "Status_Real_File ", status
-
+      if (status.ne.0) then
+        print *, "Status_Real_File ", status
+      else
+        continue
+      end if
+      
       close (UnitNum)
-
+      
     end subroutine
-
+    
     subroutine ReadIntegerFile(UnitNum, FileName, NumRows, NumCols, IntegerArray)
-
+    
       integer :: i, j, status
       integer, intent(in)            :: UnitNum, NumRows, NumCols
       character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       integer, dimension (1:NumRows, 1:NumCols), intent (out) :: IntegerArray
-
-
+      
+      
       open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
-
+      
       ! read in values
       read(UnitNum,*) ((IntegerArray(i,j), j=1,NumCols), i=1,NumRows)
-      print *, "Status_Int_File  ", status
+      if (status.ne.0) then
+        print *, "Status_Int_File  ", status
+      else
+        continue
+      end if
       ! print*, "Shape of ",FileName," is ", shape(IntegerArray)
       close (UnitNum)
-
+      
     end subroutine ReadIntegerFile
-
+    
     subroutine ReadReal(UnitNum, FileName, value)
-
+      
       integer :: status, UnitNum
       character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       real :: value
-
-
+      
+      
       open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
-
+      
       ! read in values
       read(UnitNum,*) value
-      print *, "Status_Single_Val", status
-
+      if (status.ne.0) then
+        print *, "Status_Single_Val", status
+      else
+        continue
+      end if
+      
       close (UnitNum)
-
+      
     end subroutine
-
+    
     subroutine ReadMixFile(UnitNum, FileName, NumRows, NumCols, Real_Array)
       implicit none
-
+      
       ! - - - - - - - - - - * * * * * * * * * * - - - - - - - - - -
       ! Rutina que lee un conjunto de datos en el formato indicado
       ! en la etiqueta 22
       !- - - - - - - - - - * * * * * * * * * * - - - - - - - - - -
-
+      
       integer :: i, j, status, UnitNum, NumRows, NumCols
       character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
       character (len=*), intent (in) :: FileName
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
-
-
+      
       open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
-
+      
       ! read in values
       read(UnitNum,22) ((Real_Array(i,j), j=1,NumCols), i=1,NumRows)
-      print *, "Status_Mix_File  ", status
-
+      if (status.ne.0) then
+        print *, "Status_Mix_File  ", status
+      else
+        continue
+      end if
+      
       22 format(3F13.10)
-
       close (UnitNum)
-
+      
     end subroutine
-                             
+    
     subroutine SetElementNodes(elm_num, element_nodes, node_id_map)
       ! subroutine SetElementNodes(elm_num, elements, nodes, element_nodes, node_id_map)
       implicit none
-
+      
       ! integer, dimension(100,9),  intent(in)::  elements
       ! real, dimension(341,3), intent(in)    ::  nodes
       integer,intent(in)                       :: elm_num ! number of element for each elemental integral in do of K global
@@ -291,10 +305,9 @@ module library
 
       double precision, dimension(2*DimPr, DimPr*nUne) :: compBmat
       double precision, dimension(1, nUne)             :: Nxi, Neta
+      integer ::  i
 
-      integer::  i
-
-      ! B = 0
+      compBmat = 0.0
       Nxi  = spread(dN_dxi(:,Gp),dim = 1, ncopies= 1)
       Neta = spread(dN_deta(:,Gp),dim = 1, ncopies= 1)
 
@@ -326,7 +339,7 @@ module library
       double precision, dimension(1, nPne)         :: Npxi, Npeta
       integer :: i                                                                                                   
     
-      ! B = 0                                                                                                                        
+      Bpmat = 0.0                                                                                                                        
       Npxi  = spread(dNp_dxi(:,Gp),dim = 1, ncopies= 1)        
       Npeta = spread(dNp_deta(:,Gp),dim = 1, ncopies= 1)     
     
@@ -418,7 +431,7 @@ module library
       double precision, dimension(2*nUne,nPne)          :: kep
       double precision, dimension(nPne, nPne)           :: Stab !Will be assembled into K22 
       double precision, dimension(DimPr, DimPr)         :: Jaco, Jinv
-      double precision                                  :: detJ
+      double precision                                  :: detJ, Tauu
       double precision, dimension(2*DimPr, 2*DimPr)     :: Jb ! aqui tmb es Dof no DimPr pero 2 para vel y dos para P
       double precision, dimension(2*DimPr, DimPr*nUne)  :: B  !no es DimPr es Dof del elemento en cuestion, en este caso deberia ser
       double precision, dimension(DimPr*1, 1*nPne)      :: Bp !2 para la matriz elemental de velocidad y uno para la matriz elemental
@@ -446,13 +459,11 @@ module library
       real, dimension(nPne,DimPr)   :: pelement_nodes
       integer, dimension(nUne,1)    :: node_id_map
       integer, dimension(nPne,1)    :: pnode_id_map
-      integer                       :: gp, ngp, e, i,j, row_node, row, rowstab, colstab!, kk,l, mrow, ncol,
+      integer                       :: gp, e, i,j, row_node, row, rowstab, colstab!, kk,l, mrow, ncol,
       integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
-      real                          :: tau_stab 
 
       
 
-      ngp = size(gauss_points,1) !TMB PODRIA SER VARIABLE PERMANENTE CON SAVE
 
       A_K  = 0.0
       cc = reshape([2, 0, 0, 0, 2, 0, 0, 0, 1],[Dof,Dof])
@@ -465,7 +476,7 @@ module library
         Jb = 0
         call SetElementNodes(e, element_nodes, node_id_map)
         !do-loop: compute element (velocity-velocity) stiffness matrix ke
-        do gp  = 1, ngp
+        do gp  = 1, TotGp
           Jaco = J2D(element_nodes, dN_dxi, dN_deta, gp)
           detJ = m22det(Jaco)
           Jinv = inv2x2(Jaco)
@@ -493,9 +504,10 @@ module library
       
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       ! call Quad4Nodes(gauss_points, Np)
-      tau_stab =  4.0 * (0.17**2 / materials) !tau stabilization puedo pedir por teclado a h
       if(nUne .EQ. nPne)then
-        print"(A26,f12.5)",' Stabilization parameter: ', tau_stab
+        print *, ' ' 
+        print"(A26,f12.5)",' Stabilization parameter: ', Tau
+        print *, ' '
       else
         continue
       endif
@@ -507,7 +519,7 @@ module library
         call SetElementNodes(e, element_nodes,  node_id_map)
         call PreassureElemNods(e, pelement_nodes, pnode_id_map) !--Arreglar esto para que sea con p en todos los arguments
         ! for-loop: compute element stiffness matrix kup_e
-        do gp  = 1, ngp
+        do gp  = 1, TotGp
           Jaco = J2D(element_nodes, dN_dxi, dN_deta, gp)
           detJ = m22det(Jaco)
           Jinv = inv2x2(Jaco)
@@ -525,7 +537,8 @@ module library
           part8 = matmul(dn,part7)
           BpTBp = matmul(Bp_T,Bp) 
           kep  = kep + part8 * (detJ*gauss_weights(gp,1)) 
-          Stab = Stab + tau_stab * BpTBp * detJ * gauss_weights(gp,1)
+          Tauu = Tau
+          Stab = Stab + Tau * BpTBp * detJ * gauss_weights(gp,1)
         end do  
         
         ! for-loop: assemble ke into global KP (it mean K12)
