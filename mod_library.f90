@@ -433,10 +433,11 @@ module library
       double precision, dimension(DimPr, DimPr)         :: Jaco, Jinv
       double precision                                  :: detJ, Tauu
       double precision, dimension(2*DimPr, 2*DimPr)     :: Jb ! aqui tmb es Dof no DimPr pero 2 para vel y dos para P
-      double precision, dimension(2*DimPr, DimPr*nUne)  :: B  !no es DimPr es Dof del elemento en cuestion, en este caso deberia ser
-      double precision, dimension(DimPr*1, 1*nPne)      :: Bp !2 para la matriz elemental de velocidad y uno para la matriz elemental
-      double precision, dimension(nPne, nPne)           :: BpTBp
-      double precision, dimension(1*nPne, DimPr*1 )     :: Bp_T
+      double precision, dimension(2*DimPr, DimPr*nUne)  :: B  !no es DimPr es Dof del elemento en cuestion, en este caso deb
+      double precision, dimension(DimPr*1, 1*nPne)      :: nabP !2 para la matriz elemental de velocidad y uno para la matriz
+      double precision, dimension(DimPr*1, 1*nPne)      :: JnabP !2 para la matriz elemental de velocidad y uno para la matriz
+      double precision, dimension(1*nPne, DimPr*1)      :: JP_T !2 para la matriz elemental de velocidad y uno para la matriz
+      double precision, dimension(nPne, nPne)           :: nabTPnabP
       double precision, dimension(Dof,DimPr*DimPr)      :: HJ
       double precision, dimension(Dof,2*nUne)           :: HJB
       double precision, dimension(2*nUne,Dof)           :: HJB_T !Todos estos dos, hablan de los DoF de la velocidad 
@@ -519,14 +520,15 @@ module library
         call SetElementNodes(e, element_nodes,  node_id_map)
         call PreassureElemNods(e, pelement_nodes, pnode_id_map) !--Arreglar esto para que sea con p en todos los arguments
         ! for-loop: compute element stiffness matrix kup_e
-        do gp  = 1, TotGp
-          Jaco = J2D(element_nodes, dN_dxi, dN_deta, gp)
-          detJ = m22det(Jaco)
-          Jinv = inv2x2(Jaco)
-          Bp   = Bpmat(dNp_dxi, dNp_deta, gp)
-          Bp_T = transpose(Bp)
-          dn   = 0.0
-          do j = 1, nUne
+        do gp   = 1, TotGp
+          Jaco  = J2D(element_nodes, dN_dxi, dN_deta, gp)
+          detJ  = m22det(Jaco)
+          Jinv  = inv2x2(Jaco)
+          nabP  = Bpmat(dNp_dxi, dNp_deta, gp)
+          JnabP = matmul(Jinv,nabP)
+          JP_T  = transpose(JnabP)
+          dn    = 0.0
+          do j  = 1, nUne
             part4(j,:) = [ dN_dxi(j,gp), dN_deta(j,gp) ]  
             part5 = reshape([part4(j,:)],[2,1])           !--Revisar por que en la linea 514 y 515 si se puede hacer
             A =  matmul(Jinv,part5)           !Separe multiplicaciones para que funcione 
@@ -535,10 +537,11 @@ module library
           part6(:,1) = Np(:,gp)
           part7 = transpose(part6)
           part8 = matmul(dn,part7)
-          BpTBp = matmul(Bp_T,Bp) 
+          nabTPnabP = matmul(JP_T,JnabP) !∇'δP : ∇P 
           kep  = kep + part8 * (detJ*gauss_weights(gp,1)) 
           Tauu = Tau
-          Stab = Stab + Tau * BpTBp * detJ * gauss_weights(gp,1)
+          Stab = Stab + Tau * nabTPnabP * detJ * gauss_weights(gp,1) ! ∫ (∇'δP : ∇P) dΩ  
+
         end do  
         
         ! for-loop: assemble ke into global KP (it mean K12)
