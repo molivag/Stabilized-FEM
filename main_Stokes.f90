@@ -74,7 +74,7 @@ program main_Stokes
   print*, 'Writing postprocesses files.....'
   DEALLOCATE( S_ipiv)
   
-  !call writeMatrix(A_K, 111, 'GID_GlobalK.dat', Solution, 444, 'GID_Sol.dat')
+  call writeMatrix(A_K, 111, 'GlobalK.dat', Solution, 444, 'Sol.dat')
   !write(*,"(A)") 'Name for mesh file...'
   !read(*,"(A)") FileName 
   call PosProcess(Solution, File_PostMsh, 'msh')
