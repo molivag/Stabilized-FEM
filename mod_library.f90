@@ -424,14 +424,14 @@ module library
       implicit none
       
       double precision, dimension(2*n_nodes+n_pnodes, 2*n_nodes+n_pnodes), intent(out) :: A_K  !Global Stiffnes matrix
-      double precision, dimension(nUne,size(gauss_points,1)), intent(in)               :: dN_dxi, dN_deta
+      double precision, dimension(nUne,TotGp), intent(in) :: dN_dxi, dN_deta
       double precision, allocatable, dimension(:,:)     :: dNp_dxi, dNp_deta
       double precision, allocatable, dimension(:,:)     :: Np
       double precision, dimension(2*nUne, 2*nUne)       :: ke
       double precision, dimension(2*nUne,nPne)          :: kep
       double precision, dimension(nPne, nPne)           :: Stab !Will be assembled into K22 
-      double precision, dimension(DimPr, DimPr)         :: Jaco, Jinv
-      double precision                                  :: detJ, Tauu
+      double precision, dimension(DimPr, DimPr)         :: Jaco, Jinv, JinvP, JacoP
+      double precision                                  :: detJ, detJP
       double precision, dimension(2*DimPr, 2*DimPr)     :: Jb ! aqui tmb es Dof no DimPr pero 2 para vel y dos para P
       double precision, dimension(2*DimPr, DimPr*nUne)  :: B  !no es DimPr es Dof del elemento en cuestion, en este caso deb
       double precision, dimension(DimPr*1, 1*nPne)      :: nabP !2 para la matriz elemental de velocidad y uno para la matriz
@@ -462,10 +462,7 @@ module library
       integer, dimension(nPne,1)    :: pnode_id_map
       integer                       :: gp, e, i,j, row_node, row, rowstab, colstab!, kk,l, mrow, ncol,
       integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
-
-      
-
-
+      double precision              :: Tau, Tauu
       A_K  = 0.0
       cc = reshape([2, 0, 0, 0, 2, 0, 0, 0, 1],[Dof,Dof])
       C  = materials * cc
@@ -503,8 +500,8 @@ module library
       K12  = 0.0
       K22  = 0.0
       
-      call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
-      ! call Quad4Nodes(gauss_points, Np)
+      
+      Tau = (0.3**2 / 4.0 * materials)
       if(nUne .EQ. nPne)then
         print *, ' ' 
         print"(A26,f12.5)",' Stabilization parameter: ', Tau
@@ -512,7 +509,8 @@ module library
       else
         continue
       endif
-
+      
+      call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       !for-loop: compute K12 block of K
       do e = 1, Nelem
         kep = 0.0
@@ -522,11 +520,14 @@ module library
         ! for-loop: compute element stiffness matrix kup_e
         do gp   = 1, TotGp
           Jaco  = J2D(element_nodes, dN_dxi, dN_deta, gp)
+          JacoP = J2D(pelement_nodes, dNp_dxi, dNp_deta, gp)
           detJ  = m22det(Jaco)
+          detJP = m22det(JacoP)
           Jinv  = inv2x2(Jaco)
-          nabP  = Bpmat(dNp_dxi, dNp_deta, gp)
-          JnabP = matmul(Jinv,nabP)
-          JP_T  = transpose(JnabP)
+          JinvP = inv2x2(JacoP)
+          nabP  = Bpmat(dNp_dxi, dNp_deta, gp)  !∇P 
+          JnabP = matmul(JinvP,nabP) !J^-1 * ∇P 
+          JP_T  = transpose(JnabP)   !(J^-1 * ∇P)^T
           dn    = 0.0
           do j  = 1, nUne
             part4(j,:) = [ dN_dxi(j,gp), dN_deta(j,gp) ]  
@@ -537,11 +538,11 @@ module library
           part6(:,1) = Np(:,gp)
           part7 = transpose(part6)
           part8 = matmul(dn,part7)
-          nabTPnabP = matmul(JP_T,JnabP) !∇'δP : ∇P 
+          nabTPnabP = matmul(JP_T,JnabP) !∇'δP · ∇P 
           kep  = kep + part8 * (detJ*gauss_weights(gp,1)) 
           Tauu = Tau
-          Stab = Stab + Tau * nabTPnabP * detJ * gauss_weights(gp,1) ! ∫ (∇'δP : ∇P) dΩ  
-
+          Stab = Stab + nabTPnabP * detJP * gauss_weights(gp,1) ! ∫ (∇'δP : ∇P) dΩ  
+          Stab =  Tau *  Stab
         end do  
         
         ! for-loop: assemble ke into global KP (it mean K12)
@@ -562,59 +563,12 @@ module library
         else
          continue
         end if
-
         
-        !Desde aqui
-          ! print*, 'element number', e
-          
-          ! if ( e <= 15 ) then
-          !   do i =1,10
-          !     print*, K12(i,e)
-          !   end do    
-          ! else if (e >= 16 .or. e <= 35 )then
-          !     do i = 10,25
-          !     print*,K12(i,e)
-          !     end do
-          ! else if ( e >= 36 .or. e<= 65 )then
-          !   do i = 55,85
-          !     print*,K12(i,e)
-          !     end do
-          !   end if
-                
-          !   print*, ' '
-          !   print*, ' '
-          !   print*, 'pelements_nodes'
-          !   print*, ' '
-          !   do i = 1,nPne
-          !     print*, pelement_nodes(i,:)
-          !   end do
-          !   print*, ' '
-          !   print*, 'pnode_id_map'
-          !   print*, ' '
-          !   do i = 1,nPne
-          !     print*, pnode_id_map(i,:)
-          !   end do
-        !Y hasta aqui para comprobar la matriz K12
       end do
       
-  !Imprimir aqui matriz K22 global para verificar el ensamblaje
-      
-     !100 format (900E20.12)
-      
-      !mrow = n_pnodes 
-      !ncol = n_pnodes
-      !open(unit=555, file= "AssembleStab.txt", ACTION="write", STATUS="replace")
-      
-      !do i=1,mrow 
-      !  write(555, 100)( K22(i,j) ,j=1,ncol)
-      !end do
-      !close(555)
-      
-      !========== Filling the symetric (upper and lower) part of K ==========
-      !========== Upper
       dimAK = size(A_K,1)
       symmetric = dimAK - n_pnodes
-      
+
       do i = 1, 2*n_nodes
         do j = 2*n_nodes+1, (2*n_nodes+n_pnodes)
           A_K(i, j) = -K12(i,j-symmetric)

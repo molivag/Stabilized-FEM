@@ -13,15 +13,14 @@ module Parameters
   integer, parameter :: totGp     = 4    ! 1,4,9 for Q, 1,3,4,6 for P 
 
 
-  double precision, parameter :: Tau = ((0.1)**2 / 4.0*1.0)
 
   character(len=20), parameter :: File_element  = 'elementsQUAD.dat'
   character(len=20), parameter :: File_nodes    = 'nodesQUAD.dat'
   character(len=13), parameter :: File_material = 'materials.dat'
   character(len=20), parameter :: File_pnodes   = 'pnodesQUAD.dat'
   character(len=20), parameter :: File_pelement = 'elementsQUAD.dat'
-  character(len=20), parameter :: File_PostMsh  = 'QUADfix.post.msh'
-  character(len=20), parameter :: File_PostRes  = 'QUADfix.post.res'
+  character(len=20), parameter :: File_PostMsh  = 'QUADbug.post.msh'
+  character(len=20), parameter :: File_PostRes  = 'QUADbug.post.res'
 
 
   double precision, allocatable, dimension(:,:) :: gauss_points, gauss_weights !Verificar si debe ser global---> Si, se usa en la funcion ComputeK
