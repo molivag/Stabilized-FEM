@@ -543,7 +543,7 @@ module library
       K12  = 0.0
       K22  = 0.0
       
-      Tau = (1.0**2 / 4.0 * 1.0)
+      Tau = 0.0!(0.8**2 / 4.0 * 1.0)
       print"(A10,f10.5)",'𝜏 =  ', Tau
       print*, ' '
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
