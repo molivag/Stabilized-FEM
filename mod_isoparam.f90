@@ -22,7 +22,7 @@ module Isoparametric
           if(totGp.eq.1)then 
             gauss_points(1,1) = 0.0
             gauss_points(1,2) = 0.0
-            gauss_weights(1,1) = 2.0
+            gauss_weights(1,1) = 4.0
           else if(totGp.eq.4) then
             gauss_points(1,1) = -sqrt(1.0/3.0)
             gauss_points(2,1) = sqrt(1.0/3.0)
