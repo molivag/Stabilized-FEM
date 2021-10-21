@@ -37,33 +37,33 @@ module Isoparametric
             gauss_weights(3,1)=1.0
             gauss_weights(4,1)=1.0
           else if(totGp.eq.9) then
-            gauss_points(1,1)=-sqrt(3.0/5.0)
+            gauss_points(1,1)=sqrt(3.0/5.0)
             gauss_points(2,1)= 0.0
-            gauss_points(3,1)= sqrt(3.0/5.0)
+            gauss_points(3,1)=-sqrt(3.0/5.0)
             gauss_points(4,1)=-sqrt(3.0/5.0)
-            gauss_points(5,1)= 0.0
-            gauss_points(6,1)= sqrt(3.0/5.0)
-            gauss_points(7,1)=-sqrt(3.0/5.0)
-            gauss_points(8,1)= 0.0
-            gauss_points(9,1)= sqrt(3.0/5.0)
-            gauss_points(1,2)=-sqrt(3.0/5.0)
-            gauss_points(2,2)=-sqrt(3.0/5.0)
-            gauss_points(3,2)=-sqrt(3.0/5.0)
+            gauss_points(5,1)=-sqrt(3.0/5.0) 
+            gauss_points(6,1)= 0.0
+            gauss_points(7,1)=sqrt(3.0/5.0)
+            gauss_points(8,1)=sqrt(3.0/5.0)
+            gauss_points(9,1)= 0.0
+            gauss_points(1,2)=sqrt(3.0/5.0)
+            gauss_points(2,2)=sqrt(3.0/5.0)
+            gauss_points(3,2)=sqrt(3.0/5.0)
             gauss_points(4,2)= 0.0
-            gauss_points(5,2)= 0.0
-            gauss_points(6,2)= 0.0
-            gauss_points(7,2)= sqrt(3.0/5.0)
-            gauss_points(8,2)= sqrt(3.0/5.0)
-            gauss_points(9,2)= sqrt(3.0/5.0)
+            gauss_points(5,2)=-sqrt(3.0/5.0)
+            gauss_points(6,2)=-sqrt(3.0/5.0)
+            gauss_points(7,2)=-sqrt(3.0/5.0)
+            gauss_points(8,2)= 0.0
+            gauss_points(9,2)= 0.0
             gauss_weights(1,1)= 25.0/81.0
             gauss_weights(2,1)= 40.0/81.0
             gauss_weights(3,1)= 25.0/81.0
             gauss_weights(4,1)= 40.0/81.0
-            gauss_weights(5,1)= 64.0/81.0
+            gauss_weights(5,1)= 25.0/81.0
             gauss_weights(6,1)= 40.0/81.0
             gauss_weights(7,1)= 25.0/81.0
             gauss_weights(8,1)= 40.0/81.0
-            gauss_weights(9,1)= 25.0/81.0
+            gauss_weights(9,1)= 64.0/81.0
           end if
         case('Triangle') !else if(nnode.eq.3. or .nnode.eq.6) then
           if(totGp.eq.1) then
