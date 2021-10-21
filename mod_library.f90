@@ -505,7 +505,7 @@ module library
       integer, dimension(nPne,1)    :: pnode_id_map
       integer                       :: gp, e, i,j, row_node, row, rowstab, colstab!, kk,l, mrow, ncol,
       integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
-      double precision              :: Tau, Tauu
+      double precision              :: Tau 
       A_K  = 0.0
       cc = reshape([2, 0, 0, 0, 2, 0, 0, 0, 1],[Dof,Dof])
       C  = materials * cc
@@ -543,8 +543,8 @@ module library
       K12  = 0.0
       K22  = 0.0
       
-      Tau = (0.5**2 / 4.0 * materials)
-      print"(A5,f10.5)",' 𝜏= ', Tau
+      Tau = (1.0**2 / 4.0 * 1.0)
+      print"(A10,f10.5)",'𝜏 =  ', Tau
       print*, ' '
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       !for-loop: compute K12 block of K
@@ -554,7 +554,7 @@ module library
         call SetElementNodes(e, element_nodes,  node_id_map)
         call PreassureElemNods(e, pelement_nodes, pnode_id_map) !--Arreglar esto para que sea con p en todos los arguments
         ! for-loop: compute element stiffness matrix kup_e
-        do gp   = 1, TotGp
+        do gp = 1, TotGp
           Jaco  = J2D(element_nodes, dN_dxi, dN_deta, gp)
           JacoP = JP2D(pelement_nodes, dNp_dxi, dNp_deta, gp)
           detJ  = m22det(Jaco)
@@ -565,9 +565,9 @@ module library
           JnabP = matmul(JinvP,nabP) !J^-1 * ∇P 
           JP_T  = transpose(JnabP)   !(J^-1 * ∇P)^T
           dn    = 0.0
-          do j  = 1, nUne
+          do j = 1, nUne
             part4(j,:) = [ dN_dxi(j,gp), dN_deta(j,gp) ]  
-            part5 = reshape([part4(j,:)],[2,1])           !--Revisar por que en la linea 514 y 515 si se puede hacer
+            part5 = reshape([part4(j,:)],[2,1]) !--Revisar por que en la linea 514 y 515 si se puede hacer
             A =  matmul(Jinv,part5)           !Separe multiplicaciones para que funcione 
             dN(2*j-1:2*j ,1)= A(:,1)          !quiza dividri operacion de este matmul
           end do
@@ -576,9 +576,9 @@ module library
           part8 = matmul(dn,part7)
           nabTPnabP = matmul(JP_T,JnabP) !∇'δP · ∇P 
           kep  = kep + part8 * (detJ*gauss_weights(gp,1)) 
-          Tauu = Tau
-          Stab = Stab + Tau * nabTPnabP * detJP * gauss_weights(gp,1) ! ∫ (∇'δP : ∇P) dΩ  
+          Stab = Stab + nabTPnabP * detJP * gauss_weights(gp,1) ! ∫ (∇'δP : ∇P) dΩ  
         end do  
+          Stab = Stab * Tau 
         
         ! for-loop: assemble ke into global KP (it mean K12)
         do i = 1, nUne
@@ -592,12 +592,7 @@ module library
           end do
         end do 
         
-        ! for-loop: assemble stab into global K22
-        !if(nUne .EQ. nPne)then
-         call AssemblyStab(Stab, pnode_id_map, K22) ! assemble global K
-        !else
-         !continue
-        !end if
+        call AssemblyStab(Stab, pnode_id_map, K22) ! assemble global K
         
       end do
       
@@ -618,17 +613,13 @@ module library
       end do
       !========== Filling the stabilization global matrix into A_K ==========
       
-      !if(nUne .EQ. nPne)then
-        RowStab = dimAK - n_pnodes 
-        ColStab = dimAK - n_pnodes 
-        do i = RowStab, 2*n_nodes+n_pnodes -1
-          do j = ColStab, 2*n_nodes+n_pnodes-1
-            A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
-          end do
+      RowStab = dimAK - n_pnodes 
+      ColStab = dimAK - n_pnodes 
+      do i = RowStab, 2*n_nodes+n_pnodes -1
+        do j = ColStab, 2*n_nodes+n_pnodes-1
+          A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
         end do
-      !else
-      !  continue
-      !end if
+      end do
       
       !      do i = RowStab, 2*n_nodes+n_pnodes
       !        do j = ColStab, 2*n_nodes+n_pnodes
