@@ -178,7 +178,7 @@ module library
 
       integer, intent(in)                      :: Gp !esta variable se usara en el lazo principal con el numero de punto de gauss para evaluar las integrales elementales
       real, dimension(nUne,DimPr), intent(in)  :: element_nodes
-      double precision, dimension(nUne,size(gauss_points) ), intent(in) :: dN_dxi, dN_deta
+      double precision, dimension(nUne,totGp), intent(in) :: dN_dxi, dN_deta
       double precision, dimension(DimPr,nUne)  :: Basis2D
       double precision, dimension(1,nUne)      :: Nxi, Neta
       double precision, dimension(DimPr,DimPr) :: J2D
@@ -216,6 +216,51 @@ module library
 
       return
     end function J2D
+
+    function JP2D( element_nodes, dN_dxi, dN_deta, Gp)
+          implicit none
+    
+          integer, intent(in)                      :: Gp !esta variable se usara en el lazo principal con el numero de punto de gauss para evaluar las integrales elementales
+          real, dimension(nPne,DimPr), intent(in)  :: element_nodes
+          double precision, dimension(nPne,totGp), intent(in) :: dN_dxi, dN_deta
+          double precision, dimension(DimPr,nPne)  :: Basis2D
+          double precision, dimension(1,nPne)      :: Nxi, Neta
+          double precision, dimension(DimPr,DimPr) :: JP2D
+    
+          !con estas instrucciones extraigo la columna de Nx como renglon y lo guardo en Nxi, Gp se
+          !ira moviendo conforme la funcion J2D sea llamada en el lazo principal para cada elemento lo mismo para Neta con dN_deta
+          Nxi  = spread(dN_dxi(:,Gp),dim = 1, ncopies= 1)
+          Neta = spread(dN_deta(:,Gp),dim = 1, ncopies= 1)
+    
+          !Las siguientes tres lineas realizan de forma implicita el calculo de las derivadas
+          !espaciales es decir dN/dx and dN/dy (eq. 5.114 - 5.117). Las derivadas espaciales 
+          !no se calcula explicitamente, en su lugar se usa:
+            
+          !            d/dy = (d/deta)J^-1      (ver eq. 5.77 y 5.109)
+    
+          ! Esta forma de 
+          Basis2D(1,:) = Nxi(1,:)
+          Basis2D(2,:) = Neta(1,:)
+          JP2D = matmul(Basis2D,element_nodes) !Aqui se usan directamente las derivadas (eqs 5.114-5.117) de las coordenadas fisicas
+                                              !respecto de las coordenadas del master element (isoparametric domain) para llenar la matriz Jacobiano.
+          ! De la subroutina Quad4Nodes or Quad8Nodes  ya se tienen las derivadas de las funciones de forma respecto a las coordenadas del master element
+          ! es decir dN/dxi and dN/deta contenidas en Basis 2D. Luego, se multiplican por element_nodes para completar el Jacobiano.
+          
+    
+          ! - - - * * * D U D A * * * - - -
+            !Si el nombre de la funcion es el mismo que la variable donde se guarda, entonces no puedo declararla como
+            ! variable global, ¿Como debo hacerlo?
+    
+            !Si lo dejo como
+    
+            !J = Matmul(Basis2D,element_nodes)
+    
+            !Me marca un warning
+          ! - - - * * * D U D A * * * - - -
+    
+          return
+        end function JP2D
+
 
     function inv2x2(A)
 
@@ -366,8 +411,6 @@ module library
       integer, intent(in)                              :: ndDOF 
       integer :: i, j, row_node, row, col_node, col !nodal Degrees of Freedom
       
-      !K 
-      
       do i = 1, nUne
         row_node = node_id_map(i,1)
         row = ndDOF*row_node - (ndDOF-1)
@@ -381,13 +424,12 @@ module library
         
       enddo
       
-      
       return
       
     end subroutine AssembleK
     
     
-    subroutine AssemblyStab(ke, node_id_map, ndDOF, K)
+    subroutine AssemblyStab(ke, node_id_map, K)
       
       implicit none
       double precision, dimension(n_pnodes,n_pnodes), intent(in out)  :: K !Global Stiffnes matrix debe 
@@ -395,20 +437,21 @@ module library
       !                                                            pero en esta funcion se modifica (out)
       double precision, dimension(nPne, nPne), intent(in) :: ke
       integer, dimension(nPne,1), intent(in)              :: node_id_map
-      integer, intent(in)                                 :: ndDOF 
-      integer :: i, j, row_node, row, col_node, col !nodal Degrees of Freedom
+      integer :: i, j, row_node, row, col_node, col, pnode_id !nodal Degrees of Freedom
       
       !K 
       
       do i = 1, nPne
         row_node = node_id_map(i,1)
-        row = ndDOF*row_node - (ndDOF-1)
+        pnode_id = pnodes(row_node,2)
+        row = pnode_id !ndDOF*col_node - (ndDOF-1)
         
         do j = 1, nPne
           col_node = node_id_map(j,1)
-          col = ndDOF*col_node - (ndDOF-1)
-          K(row:row+ndDOF-1, col:col+ndDOF-1) =  K(row:row+ndDOF-1, col:col+ndDOF-1) + &
-          ke((i-1)*ndDOF+1:i*ndDOF,(j-1)*ndDOF+1:j*ndDOF)
+          pnode_id =  pnodes(col_node,2)
+          col = pnode_id !ndDOF*col_node - (ndDOF-1)
+          
+          K(row,col) =  K(row , col) + ke(i,j)
         enddo
         
       enddo
@@ -500,16 +543,9 @@ module library
       K12  = 0.0
       K22  = 0.0
       
-      
-      Tau = (0.3**2 / 4.0 * materials)
-      if(nUne .EQ. nPne)then
-        print *, ' ' 
-        print"(A26,f12.5)",' Stabilization parameter: ', Tau
-        print *, ' '
-      else
-        continue
-      endif
-      
+      Tau = (0.5**2 / 4.0 * materials)
+      print"(A5,f10.5)",' 𝜏= ', Tau
+      print*, ' '
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
       !for-loop: compute K12 block of K
       do e = 1, Nelem
@@ -520,7 +556,7 @@ module library
         ! for-loop: compute element stiffness matrix kup_e
         do gp   = 1, TotGp
           Jaco  = J2D(element_nodes, dN_dxi, dN_deta, gp)
-          JacoP = J2D(pelement_nodes, dNp_dxi, dNp_deta, gp)
+          JacoP = JP2D(pelement_nodes, dNp_dxi, dNp_deta, gp)
           detJ  = m22det(Jaco)
           detJP = m22det(JacoP)
           Jinv  = inv2x2(Jaco)
@@ -541,8 +577,7 @@ module library
           nabTPnabP = matmul(JP_T,JnabP) !∇'δP · ∇P 
           kep  = kep + part8 * (detJ*gauss_weights(gp,1)) 
           Tauu = Tau
-          Stab = Stab + nabTPnabP * detJP * gauss_weights(gp,1) ! ∫ (∇'δP : ∇P) dΩ  
-          Stab =  Tau *  Stab
+          Stab = Stab + Tau * nabTPnabP * detJP * gauss_weights(gp,1) ! ∫ (∇'δP : ∇P) dΩ  
         end do  
         
         ! for-loop: assemble ke into global KP (it mean K12)
@@ -558,11 +593,11 @@ module library
         end do 
         
         ! for-loop: assemble stab into global K22
-        if(nUne .EQ. nPne)then
-         call AssemblyStab(Stab, pnode_id_map, 1, K22) ! assemble global K
-        else
-         continue
-        end if
+        !if(nUne .EQ. nPne)then
+         call AssemblyStab(Stab, pnode_id_map, K22) ! assemble global K
+        !else
+         !continue
+        !end if
         
       end do
       
@@ -583,7 +618,7 @@ module library
       end do
       !========== Filling the stabilization global matrix into A_K ==========
       
-      if(nUne .EQ. nPne)then
+      !if(nUne .EQ. nPne)then
         RowStab = dimAK - n_pnodes 
         ColStab = dimAK - n_pnodes 
         do i = RowStab, 2*n_nodes+n_pnodes -1
@@ -591,9 +626,9 @@ module library
             A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
           end do
         end do
-      else
-        continue
-      end if
+      !else
+      !  continue
+      !end if
       
       !      do i = RowStab, 2*n_nodes+n_pnodes
       !        do j = ColStab, 2*n_nodes+n_pnodes
