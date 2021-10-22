@@ -503,7 +503,7 @@ module library
       real, dimension(nPne,DimPr)   :: pelement_nodes
       integer, dimension(nUne,1)    :: node_id_map
       integer, dimension(nPne,1)    :: pnode_id_map
-      integer                       :: gp, e, i,j, row_node, row, rowstab, colstab!, kk,l, mrow, ncol,
+      integer                       :: gp, e, i,j, row_node, row, rowstab, colstab
       integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
       double precision              :: Tau 
       A_K  = 0.0
@@ -513,11 +513,11 @@ module library
       
       !Setup for K11 block or Kuu
       do e = 1, Nelem    !elements loop for K11 block Global K
-        ke = 0
-        Jb = 0
+        ke = 0.0
+        Jb = 0.0
         call SetElementNodes(e, element_nodes, node_id_map)
         !do-loop: compute element (velocity-velocity) stiffness matrix ke
-        do gp  = 1, TotGp
+        do gp = 1, TotGp
           Jaco = J2D(element_nodes, dN_dxi, dN_deta, gp)
           detJ = m22det(Jaco)
           Jinv = inv2x2(Jaco)
@@ -540,10 +540,10 @@ module library
       !Setup for K12 block or KuP
       allocate (K12(n_nodes*2,n_pnodes),K12_T(n_pnodes,n_nodes*2))
       allocate (K22(n_pnodes,n_pnodes))
-      K12  = 0.0
-      K22  = 0.0
+      K12 = 0.0
+      K22 = 0.0
       
-      Tau = 0.0!(0.8**2 / 4.0 * 1.0)
+      Tau = (0.2**2 / 4.0 * 1.0)
       print"(A10,f10.5)",'𝜏 =  ', Tau
       print*, ' '
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
@@ -552,7 +552,7 @@ module library
         kep = 0.0
         Stab = 0.0
         call SetElementNodes(e, element_nodes,  node_id_map)
-        call PreassureElemNods(e, pelement_nodes, pnode_id_map) !--Arreglar esto para que sea con p en todos los arguments
+        call PreassureElemNods(e, pelement_nodes, pnode_id_map) !-Arreglar esto para q'sea con p en todos argumen
         ! for-loop: compute element stiffness matrix kup_e
         do gp = 1, TotGp
           Jaco  = J2D(element_nodes, dN_dxi, dN_deta, gp)
@@ -567,9 +567,9 @@ module library
           dn    = 0.0
           do j = 1, nUne
             part4(j,:) = [ dN_dxi(j,gp), dN_deta(j,gp) ]  
-            part5 = reshape([part4(j,:)],[2,1]) !--Revisar por que en la linea 514 y 515 si se puede hacer
-            A =  matmul(Jinv,part5)           !Separe multiplicaciones para que funcione 
-            dN(2*j-1:2*j ,1)= A(:,1)          !quiza dividri operacion de este matmul
+            part5 = reshape([part4(j,:)],[2,1]) 
+            A =  matmul(Jinv,part5)           
+            dN(2*j-1:2*j ,1)= A(:,1)         
           end do
           part6(:,1) = Np(:,gp)
           part7 = transpose(part6)
@@ -579,7 +579,7 @@ module library
           Stab = Stab + nabTPnabP * detJP * gauss_weights(gp,1) ! ∫ (∇'δP : ∇P) dΩ  
         end do  
           Stab = Stab * Tau 
-        
+         
         ! for-loop: assemble ke into global KP (it mean K12)
         do i = 1, nUne
           row_node = node_id_map(i,1)
@@ -596,9 +596,31 @@ module library
         
       end do
       
+      open(unit=121, file= "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/K22.dat", ACTION="write", STATUS="replace")
+      100 format(900E20.12)
+      
+      do i=1,n_pnodes 
+        write(121, 100)( -K22(i,j) ,j=1,n_pnodes)
+      end do
+      close(121) 
+
+
       dimAK = size(A_K,1)
       symmetric = dimAK - n_pnodes
+      RowStab = dimAK - n_pnodes 
+      ColStab = dimAK - n_pnodes 
+     ! do i = RowStab, 2*n_nodes+n_pnodes -1
 
+      do i = RowStab, 2*n_nodes+n_pnodes -1
+        do j = ColStab, 2*n_nodes+n_pnodes-1
+          A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
+        end do
+      end do
+
+      call writeMatrix(A_K,99,'A_K_just_Stab2.dat', A_K,11, '--.dat') 
+
+      dimAK = size(A_K,1)
+      symmetric = dimAK - n_pnodes
       do i = 1, 2*n_nodes
         do j = 2*n_nodes+1, (2*n_nodes+n_pnodes)
           A_K(i, j) = -K12(i,j-symmetric)
@@ -612,25 +634,14 @@ module library
         end do
       end do
       !========== Filling the stabilization global matrix into A_K ==========
-      
       RowStab = dimAK - n_pnodes 
       ColStab = dimAK - n_pnodes 
-      do i = RowStab, 2*n_nodes+n_pnodes -1
-        do j = ColStab, 2*n_nodes+n_pnodes-1
-          A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
-        end do
-      end do
+     ! do i = RowStab, 2*n_nodes+n_pnodes -1
+     !   do j = ColStab, 2*n_nodes+n_pnodes-1
+     !     A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
+     !   end do
+     ! end do
       
-      !      do i = RowStab, 2*n_nodes+n_pnodes
-      !        do j = ColStab, 2*n_nodes+n_pnodes
-      !          do kk = 1, n_pnodes
-      !            do l =1, n_pnodes
-      !              !A_K(i, j) = K22((i+1)-RowStab,(j+1)-ColStab)
-      !              A_K(i, j) = K22(kk,l)
-      !            end do
-      !          end do
-      !        end do
-      !      end do
       
       DEALLOCATE(K12)
       DEALLOCATE(K12_T)
