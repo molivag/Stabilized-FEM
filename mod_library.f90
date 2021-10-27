@@ -503,7 +503,7 @@ module library
       real, dimension(nPne,DimPr)   :: pelement_nodes
       integer, dimension(nUne,1)    :: node_id_map
       integer, dimension(nPne,1)    :: pnode_id_map
-      integer                       :: gp, e, i,j, row_node, row, rowstab, colstab
+      integer                       :: gp, e, i,j,k,l, row_node, row
       integer                       :: col_node, pnode_id, col, dimAK, symmetric!, mrow, ncol
       double precision              :: Tau 
       A_K  = 0.0
@@ -543,7 +543,7 @@ module library
       K12 = 0.0
       K22 = 0.0
       
-      Tau = (0.2**2 / 4.0 * 1.0)
+      Tau = (0.1**2 / 4.0 * 1.0)
       print"(A10,f10.5)",'𝜏 =  ', Tau
       print*, ' '
       call ShapeFunctions(gauss_points, nPne, Np, dNp_dxi, dNp_deta)
@@ -596,29 +596,6 @@ module library
         
       end do
       
-      open(unit=121, file= "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/K22.dat", ACTION="write", STATUS="replace")
-      100 format(900E20.12)
-      
-      do i=1,n_pnodes 
-        write(121, 100)( -K22(i,j) ,j=1,n_pnodes)
-      end do
-      close(121) 
-
-
-      dimAK = size(A_K,1)
-      symmetric = dimAK - n_pnodes
-      RowStab = dimAK - n_pnodes 
-      ColStab = dimAK - n_pnodes 
-     ! do i = RowStab, 2*n_nodes+n_pnodes -1
-
-      do i = RowStab, 2*n_nodes+n_pnodes -1
-        do j = ColStab, 2*n_nodes+n_pnodes-1
-          A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
-        end do
-      end do
-
-      call writeMatrix(A_K,99,'A_K_just_Stab2.dat', A_K,11, '--.dat') 
-
       dimAK = size(A_K,1)
       symmetric = dimAK - n_pnodes
       do i = 1, 2*n_nodes
@@ -634,14 +611,13 @@ module library
         end do
       end do
       !========== Filling the stabilization global matrix into A_K ==========
-      RowStab = dimAK - n_pnodes 
-      ColStab = dimAK - n_pnodes 
-     ! do i = RowStab, 2*n_nodes+n_pnodes -1
-     !   do j = ColStab, 2*n_nodes+n_pnodes-1
-     !     A_K(i, j) = -K22( (i+1)-RowStab,(j+1)-ColStab )
-     !   end do
-     ! end do
-      
+      do i = 1, n_pnodes 
+        do j = 1, n_pnodes
+          k = 2*n_nodes + i
+          l = 2*n_nodes + j
+          A_K(k, l) = -K22(i,j)
+        end do
+      end do
       
       DEALLOCATE(K12)
       DEALLOCATE(K12_T)
