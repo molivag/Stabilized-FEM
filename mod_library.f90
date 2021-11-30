@@ -1,4 +1,16 @@
 module library
+  ! -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  !
+  !                         Cavity Driven Flow Simulation                               !
+  !                                                                                     !
+  ! Libreria principal para el programa Stokes2D contiene la mayor parte de las         !
+  ! subrutinas necesarias para la ejecucion del codigo                                  !
+  !                                                                                     !
+  !                                                                                     !
+  !                                                    Ultima revision: Octubre 2021    !
+  !                                                                                     !
+  ! Marco Oliva-Gutierrez                                                               !
+  !                                                                 UPC BarcelonaTech   !
+  ! -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  !
   use Parameters
   use Isoparametric
   

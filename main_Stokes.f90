@@ -1,4 +1,18 @@
 program main_Stokes
+  ! -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  !
+  !                         Cavity Driven Flow Simulation                               !
+  !                                                                                     !
+  ! Programa que resuelve la parte difusiva de las ecuaciones de Navier-Stokes en 2D    !
+  ! empleando el método de elementos finitos mixtos o estabilizados.                    !
+  !                                                                                     !
+  !                                                                                     !
+  !                                                    Ultima revision: Octubre 2021    !
+  !                                                                                     !
+  ! Marco Oliva-Gutierrez                                                               !
+  !                                                                                     !
+  !                                                                 UPC BarcelonaTech   !
+  ! -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  !
+
   use library
   use Parameters
   use Isoparametric
