@@ -1,5 +1,5 @@
 Figures/
-*.dat
+
 *.txt
 *.o
 *.mod
@@ -7,4 +7,4 @@ Figures/
 Msh/
 .ipynb_checkpoints/
 *.ipynb
-*/
+

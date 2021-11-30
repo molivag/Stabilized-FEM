@@ -46,7 +46,7 @@ module library
       character(len=:), allocatable :: fileplace
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
                   ! /home/maoliva/Codes/StokesFlow_Aca/Geo 
-      fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      fileplace = "/Users/molivag/Documents/HerramientasParaLaSimulacion/Cavity-webinar-/Geo/"
       
       open (unit = UnitNum, file =fileplace//FileName, status='old', action='read' , iostat = status)
       
@@ -66,7 +66,7 @@ module library
     
       integer :: i, j, status
       integer, intent(in)            :: UnitNum, NumRows, NumCols
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "/Users/molivag/Documents/HerramientasParaLaSimulacion/Cavity-webinar-/Geo/"
       character (len=*), intent (in) :: FileName
       integer, dimension (1:NumRows, 1:NumCols), intent (out) :: IntegerArray
       
@@ -88,7 +88,7 @@ module library
     subroutine ReadReal(UnitNum, FileName, value)
       
       integer :: status, UnitNum
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "/Users/molivag/Documents/HerramientasParaLaSimulacion/Cavity-webinar-/Geo/"
       character (len=*), intent (in) :: FileName
       real :: value
       
@@ -116,7 +116,7 @@ module library
       !- - - - - - - - - - * * * * * * * * * * - - - - - - - - - -
       
       integer :: i, j, status, UnitNum, NumRows, NumCols
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter    :: fileplace = "/Users/molivag/Documents/HerramientasParaLaSimulacion/Cavity-webinar-/Geo/"
       character (len=*), intent (in) :: FileName
       real, dimension (1:NumRows, 1:NumCols), intent (out) :: Real_Array
       
@@ -623,13 +623,13 @@ module library
         end do
       end do
       !========== Filling the stabilization global matrix into A_K ==========
-      do i = 1, n_pnodes 
-        do j = 1, n_pnodes
-          k = 2*n_nodes + i
-          l = 2*n_nodes + j
-          A_K(k, l) = -K22(i,j)
-        end do
-      end do
+      ! do i = 1, n_pnodes 
+      !   do j = 1, n_pnodes
+      !     k = 2*n_nodes + i
+      !     l = 2*n_nodes + j
+      !     A_K(k, l) = -K22(i,j)
+      !   end do
+      ! end do
       
       DEALLOCATE(K12)
       DEALLOCATE(K12_T)
@@ -654,7 +654,7 @@ module library
       !=========================================================================
       implicit none
                                                      !"/home/maoliva/Codes/StokesFlow_Aca/Geo/"
-      character(len=*), parameter :: fileplace ="~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Geo/"
+      character(len=*), parameter :: fileplace ="/Users/molivag/Documents/HerramientasParaLaSimulacion/Cavity-webinar-/Geo/"
       integer, intent(out) :: NoBV, NoBVcol
       integer :: ierror, a ,b, c, i
       real    :: x, y, xmin, xmax, ymin, ymax, xhalf
@@ -819,7 +819,7 @@ module library
     subroutine writeMatrix(Matrix, unit1, name1, Vector, unit2, name2)
       implicit none
                                                     !"/home/maoliva/Codes/StokesFlow_Aca/Res/" 
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Res/"
+      character(len=*), parameter    :: fileplace = "/Users/molivag/Documents/HerramientasParaLaSimulacion/Cavity-webinar-/Res/"
       character(*) :: name1, name2
       integer :: i, j, mrow, ncol, unit1, unit2
       double precision, dimension(2*n_nodes+n_pnodes ,2*n_nodes+n_pnodes ), intent(in) :: Matrix
@@ -848,7 +848,7 @@ module library
       
       implicit none
                                                       !"/home/maoliva/Codes/StokesFlow_Aca/Pos/"  
-      character(len=*), parameter    :: fileplace = "~/Dropbox/1.Doctorado/1.Research/Computing/Fortran/StokesFlow/Pos/"
+      character(len=*), parameter    :: fileplace = "/Users/molivag/Documents/HerramientasParaLaSimulacion/Cavity-webinar-/Pos/"
       real*8, dimension(2*n_nodes+n_pnodes, 1), intent(in) :: solution
       character(*), intent(in)                             :: nameFile1, activity
       double precision, dimension(1, 2*n_nodes+n_pnodes)   :: solution_T
