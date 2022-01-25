@@ -18,7 +18,7 @@ CFLAGS += -warn all
 #	optimization flags 
 CFLAGS += -O0 -heap-arrays
 #	error finding options
-CFLAGS += -check all -traceback -CB -fp-stack-check -check noarg_temp_created 
+CFLAGS += -mkl -check all -traceback -CB -fp-stack-check -check noarg_temp_created 
 # at the end of the tests return to -check all option
 
 #	source files
@@ -41,7 +41,7 @@ all : $(MAIN)
 	@echo '======================'
 
 $(MAIN) : $(OBJS)
-	@$(FC) $(CFLAGS) -g -mkl -O0 $(OBJS) -o $(MAIN) 
+	@$(FC) $(CFLAGS) $(OBJS) -o $(MAIN) 
 #next line is for debugging (GDB does not work if the executable was compiled with the -mkl flag)
 #@$(FC) $(CFLAGS) -g $(OBJS) -o $(MAIN) 
 # @$(FC) $(CFLAGS) $(OBJS) -o $(MAIN)
